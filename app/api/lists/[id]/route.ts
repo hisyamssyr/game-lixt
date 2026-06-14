@@ -75,8 +75,12 @@ export async function PATCH(
 
     const userId = session.user.user_id
 
+    const safeTitle = title ?? null;
+    const safeDesc = description ?? null;
+    const safeCoverUrl = list_cover_url ?? null;
+
     await db.execute(
-      sql`CALL edit_list_details(${userId}::uuid, ${listId}::uuid, ${title}::varchar, ${description}::text, ${list_cover_url}::varchar)`
+      sql`CALL edit_list_details(${userId}::uuid, ${listId}::uuid, ${safeTitle}::varchar, ${safeDesc}::text, ${safeCoverUrl}::varchar)`
     )
 
     return NextResponse.json({ success: true, message: 'List updated' })
