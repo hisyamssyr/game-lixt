@@ -83,7 +83,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     await db.delete(games).where(eq(games.game_id, id))
 
-    return NextResponse.json({ success: true, message: 'Game deleted' }, { status: 200 })
+    return NextResponse.json({ success: true, message: 'Game deleted successfully' }, { status: 200 })
   } catch (error) {
     console.error('Delete game error:', error)
     return NextResponse.json({ success: false, error: 'Failed to delete game' }, { status: 500 })

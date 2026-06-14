@@ -27,7 +27,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     await db.delete(genres).where(eq(genres.genre_id, id))
 
-    return NextResponse.json({ success: true, message: 'Genre deleted' }, { status: 200 })
+    return NextResponse.json({ success: true, message: 'Genre deleted successfully' }, { status: 200 })
   } catch (error) {
     console.error('Delete genre error:', error)
     return NextResponse.json({ success: false, error: 'Failed to delete genre' }, { status: 500 })
