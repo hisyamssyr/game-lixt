@@ -20,6 +20,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     const { id } = await context.params
 
+    // Check if the authenticated user is trying to delete their OWN account
     if (session.user.user_id !== id) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 })
     }

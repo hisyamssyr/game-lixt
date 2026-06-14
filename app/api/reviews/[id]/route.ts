@@ -24,17 +24,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
+    const ratingValue = rating === undefined ? null : Number(rating)
+    if (rating !== undefined && Number.isNaN(ratingValue)) {
+      return NextResponse.json({ error: 'Rating must be a number' }, { status: 400 })
+    }
+
     const userId = session.user.user_id
 
     await db.execute(
-      sql`CALL edit_review(${userId}::uuid, ${reviewId}::uuid, ${rating}::numeric, ${review_text}::text)`
+      sql`CALL edit_review(${userId}::uuid, ${reviewId}::uuid, ${review_text ?? null}::text, ${ratingValue}::numeric)`
     )
 
     return NextResponse.json({ success: true, message: 'Review updated' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating review:', error)
+    const message = error instanceof Error ? error.message : 'Failed to update review'
     return NextResponse.json(
-      { error: error.message || 'Failed to update review' },
+      { error: message },
       { status: 403 }
     )
   }
@@ -62,10 +68,11 @@ export async function DELETE(
     )
 
     return NextResponse.json({ success: true, message: 'Review deleted' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting review:', error)
+    const message = error instanceof Error ? error.message : 'Failed to delete review'
     return NextResponse.json(
-      { error: error.message || 'Failed to delete review' },
+      { error: message },
       { status: 403 }
     )
   }
