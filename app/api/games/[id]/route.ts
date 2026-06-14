@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 
 import { achievements, game_genres, games, genres } from '@/db/schema'
 import { db } from '@/lib/db'
+import { getServerSession } from '@/lib/auth'
 
 type RouteContext = {
   params: Promise<{
@@ -63,5 +64,28 @@ export async function GET(_request: Request, context: RouteContext) {
       { success: false, error: 'Failed to fetch game' },
       { status: 500 },
     )
+  }
+}
+
+export async function DELETE(request: Request, context: RouteContext) {
+  try {
+    const session = await getServerSession()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await context.params
+
+    const existingGame = await db.select().from(games).where(eq(games.game_id, id)).limit(1)
+    if (!existingGame.length) {
+      return NextResponse.json({ success: false, error: 'Game not found' }, { status: 404 })
+    }
+
+    await db.delete(games).where(eq(games.game_id, id))
+
+    return NextResponse.json({ success: true, message: 'Game deleted' }, { status: 200 })
+  } catch (error) {
+    console.error('Delete game error:', error)
+    return NextResponse.json({ success: false, error: 'Failed to delete game' }, { status: 500 })
   }
 }
