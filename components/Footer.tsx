@@ -111,43 +111,6 @@ export function Footer() {
           </div>
         </div>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingTop: 24,
-          borderTop: '1px solid var(--gl-border)',
-          flexWrap: 'wrap',
-          gap: 16,
-        }}>
-          <p style={{ color: '#8888A0', fontSize: '0.78rem', margin: 0 }}>
-            Â© 2026 GameLixt. All rights reserved.
-          </p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {[Send, Code2, MessageCircle, Radio].map((Icon, i) => (
-              <button
-                key={i}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--gl-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#8888A0',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#F0F0F5'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(108,99,255,0.4)'; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#8888A0'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--gl-border)'; }}
-              >
-                <Icon size={15} />
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </footer>
   );

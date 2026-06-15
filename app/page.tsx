@@ -40,7 +40,7 @@ export default async function HomePage() {
       .leftJoin(list_items, eq(list.list_id, list_items.list_id))
       .leftJoin(games, eq(list_items.game_id, games.game_id))
       .groupBy(list.list_id, users.username)
-      .orderBy(desc(list.created_at))
+      .orderBy(desc(sql`count_list_vote(${list.list_id})`))
       .limit(20)
   ]);
 
