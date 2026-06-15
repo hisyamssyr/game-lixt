@@ -71,4 +71,4 @@ export interface CuratedList {
 export interface UserLibraryEntry {
   gameId: string;
   status: GameStatus;
-
+}

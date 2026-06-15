@@ -15,7 +15,7 @@ import {
   list_votes,
   thread,
   thread_votes,
-} from './schema';
+} from '../db/schema';
 import { eq, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 

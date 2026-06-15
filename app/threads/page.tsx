@@ -11,7 +11,7 @@ export default async function ThreadsFeedPage() {
   const userId = session?.user?.user_id;
 
   // Fetch root threads directly
-  let rawThreads = [];
+  let rawThreads: Record<string, unknown>[] = [];
   try {
     const res = await db.execute(sql`
       SELECT 
