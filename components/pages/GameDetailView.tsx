@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, MessageCircle, Star, Trophy, ChevronDown, Check, Plus, Edit3 } from 'lucide-react';
 import { GenrePill } from '@/components/GenrePill';
 import { RatingBadge } from '@/components/RatingBadge';
@@ -16,14 +16,23 @@ const statuses: { label: string; value: GameStatus; api: string; color: string }
   { label: 'Plan to Play', value: 'plan_to_play', api: 'Plan to Play', color: '#FFB547' },
   { label: 'Dropped', value: 'dropped', api: 'Dropped', color: '#EF4444' },
 ];
+import { useLibrary } from '@/components/Providers';
 
 export function GameDetailView({ game, reviews, initialStatus, myLists = [], featuredLists = [] }: { game: Game; reviews: Review[]; initialStatus?: GameStatus | null; myLists?: { list_id: string; title: string }[], featuredLists?: CuratedList[] }) {
+  const { library, addToLibrary: globalAddToLibrary } = useLibrary();
   const [tab, setTab] = useState<'overview' | 'reviews' | 'lists'>('overview');
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<GameStatus | null>(initialStatus || null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [listDropdownOpen, setListDropdownOpen] = useState(false);
   const [listBusy, setListBusy] = useState(false);
+
+  // Sync local status with global library state if it changes!
+  useEffect(() => {
+    if (library[game.id]) {
+      setStatus(library[game.id]);
+    }
+  }, [library, game.id]);
 
   async function addToList(list_id: string, list_title: string) {
     if (listBusy) return;
@@ -51,20 +60,12 @@ export function GameDetailView({ game, reviews, initialStatus, myLists = [], fea
   async function addToLibrary(play_status: GameStatus) {
     if (busy) return;
     setBusy(true);
-    const apiStatus = statuses.find(s => s.value === play_status)?.api;
-    if (!apiStatus) return;
-
     try {
-      const res = await fetch('/api/library', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game_id: game.id, play_status: apiStatus }) });
-      if (res.ok) {
-        setStatus(play_status);
-        setDropdownOpen(false);
-        toast.success(`Marked as ${apiStatus}`);
-      } else {
-        toast.error('Failed to update library');
-      }
+      await globalAddToLibrary(game.id, play_status);
+      setStatus(play_status);
+      setDropdownOpen(false);
     } catch (e) {
-      toast.error('Error updating library');
+      // Error is handled by globalAddToLibrary toast
     } finally {
       setBusy(false);
     }

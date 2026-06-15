@@ -51,16 +51,46 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const joined = profile.join_date ? new Date(profile.join_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
   const avatar = profile.avatar_url ?? 'https://picsum.photos/seed/game-lixt-user/120/120';
 
-  const [listsRes, gamesRes] = await Promise.all([
-    fetch(`${baseUrl}/api/lists?user_id=${profile.user_id}`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .catch(() => []),
-    fetch(`${baseUrl}/api/games?limit=80`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .catch(() => ({ games: [] })),
+  const { desc, sql } = await import('drizzle-orm');
+  const { list_items } = await import('@/db/schema');
+
+  const [userListsRaw, gamesListRaw] = await Promise.all([
+    db
+      .select({
+        list_id: userLists.list_id,
+        title: userLists.title,
+        description: userLists.description,
+        list_cover_url: userLists.list_cover_url,
+        created_at: userLists.created_at,
+        username: users.username,
+        vote_score: sql<number>`count_list_vote(${userLists.list_id})`.as('vote_score'),
+        game_count: sql<number>`CAST(COUNT(DISTINCT ${list_items.item_id}) AS INTEGER)`.as('game_count'),
+        covers: sql<string[]>`array_agg(DISTINCT ${games.cover_url}) FILTER (WHERE ${games.cover_url} IS NOT NULL)`.as('covers'),
+        has_upvoted: sql<boolean>`EXISTS(SELECT 1 FROM list_votes WHERE list_id = ${userLists.list_id} AND user_id = ${session?.user?.user_id ? session.user.user_id : '00000000-0000-0000-0000-000000000000'}::uuid AND vote_type = true)`.as('has_upvoted')
+      })
+      .from(userLists)
+      .innerJoin(users, eq(userLists.user_id, users.user_id))
+      .leftJoin(list_items, eq(userLists.list_id, list_items.list_id))
+      .leftJoin(games, eq(list_items.game_id, games.game_id))
+      .where(eq(userLists.user_id, profile.user_id))
+      .groupBy(userLists.list_id, users.username)
+      .orderBy(desc(userLists.created_at)),
+    db
+      .select({
+        game_id: games.game_id,
+        title: games.title,
+        developer: games.developer,
+        release_date: games.release_date,
+        average_rating: games.average_rating,
+        cover_url: games.cover_url,
+      })
+      .from(games)
+      .orderBy(desc(games.average_rating))
+      .limit(80)
   ]);
-  const userLists = (Array.isArray(listsRes) ? listsRes : []).map(toList);
-  const gamesList = (gamesRes.games ?? []).map(toGame);
+
+  const profileUserLists = userListsRaw.map(toList);
+  const gamesList = gamesListRaw.map(toGame);
   const stats = [
     { label: 'Games', value: profile.stats.game_count, color: '#6C63FF' },
     { label: 'Reviews', value: profile.stats.review_count, color: '#FFB547' },
@@ -100,7 +130,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       </section>
       <ProfileTabs 
         library={profile.library} 
-        lists={userLists} 
+        lists={profileUserLists} 
         games={gamesList} 
         reviews={profile.reviews}
         gameTitles={profile.gameTitles}

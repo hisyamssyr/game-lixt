@@ -63,19 +63,20 @@ export function BrowseView() {
             
             <form onSubmit={(e) => { e.preventDefault(); updateParam('search', search); }} style={{ display: 'flex', marginBottom: 24 }}>
               <input 
+                suppressHydrationWarning
                 value={search} 
                 onChange={(e) => setSearch(e.target.value)} 
                 placeholder="Search games..." 
                 style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--gl-border)', borderRadius: '8px 0 0 8px', color: '#F0F0F5', padding: '10px 14px', outline: 'none', fontSize: '0.9rem' }} 
               />
-              <button type="submit" style={{ width: 44, border: 'none', background: 'linear-gradient(135deg, #6C63FF, #3B82F6)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '0 8px 8px 0' }}>
+              <button suppressHydrationWarning type="submit" style={{ width: 44, border: 'none', background: 'linear-gradient(135deg, #6C63FF, #3B82F6)', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderRadius: '0 8px 8px 0' }}>
                 <Search size={16} />
               </button>
             </form>
 
             <label style={labelStyle}>Sort By</label>
             <div style={{ position: 'relative', marginBottom: 24 }}>
-              <select value={sort} onChange={(e) => updateParam('sort', e.target.value)} style={{ ...selectStyle, appearance: 'none', cursor: 'pointer' }}>
+              <select suppressHydrationWarning value={sort} onChange={(e) => updateParam('sort', e.target.value)} style={{ ...selectStyle, appearance: 'none', cursor: 'pointer' }}>
                 <option value="rating" style={{ color: '#0F0F13' }}>Top Rated</option>
                 <option value="release_date" style={{ color: '#0F0F13' }}>Release Date</option>
                 <option value="title" style={{ color: '#0F0F13' }}>Title</option>
