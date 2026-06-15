@@ -42,4 +42,5 @@ dev.log
 next-env.d.ts
 
 # scripts
-scripts/*.log
+scripts/
+functions.json
