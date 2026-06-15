@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -197,5 +197,51 @@
 }
 
 
-body { margin: 0; min-height: 100vh; background: var(--gl-bg-base); color: var(--gl-text-primary); font-family: Arial, Helvetica, sans-serif; }
-a { color: inherit; }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--gl-bg-base);
+  color: var(--gl-text-primary);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(var(--rotation, 0deg)); }
+  50% { transform: translateY(-15px) rotate(var(--rotation, 0deg)); }
+  100% { transform: translateY(0px) rotate(var(--rotation, 0deg)); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 8px)); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-marquee-container {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}

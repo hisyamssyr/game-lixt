@@ -14,6 +14,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'game_id is required' }, { status: 400 })
     }
 
+    const session = await getServerSession()
+    const currentUserId = session?.user?.user_id || '00000000-0000-0000-0000-000000000000'
+
     const gameReviews = await db
       .select({
         review_id: reviews.review_id,
@@ -24,6 +27,9 @@ export async function GET(req: NextRequest) {
         review_text: reviews.review_text,
         created_at: reviews.created_at,
         updated_at: reviews.updated_at,
+        upvotes: sql<number>`(SELECT count(*) FROM review_votes WHERE review_id = ${reviews.review_id} AND vote_type = true)::integer`.as('upvotes'),
+        downvotes: sql<number>`(SELECT count(*) FROM review_votes WHERE review_id = ${reviews.review_id} AND vote_type = false)::integer`.as('downvotes'),
+        userVote: sql<boolean | null>`(SELECT vote_type FROM review_votes WHERE review_id = ${reviews.review_id} AND user_id = ${currentUserId}::uuid LIMIT 1)`.as('userVote'),
       })
       .from(reviews)
       .innerJoin(users, eq(reviews.user_id, users.user_id))

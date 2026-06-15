@@ -11,6 +11,7 @@ export async function GET(
 ) {
   try {
     const { id: listId } = await params
+    const session = await getServerSession()
 
     const listDetails = await db
       .select({
@@ -20,15 +21,19 @@ export async function GET(
         list_cover_url: list.list_cover_url,
         created_at: list.created_at,
         owner: {
+          user_id: users.user_id,
           username: users.username,
           avatar_url: users.avatar_url,
         },
         vote_score: sql<number>`count_list_vote(${list.list_id})`.as('vote_score'),
+        has_upvoted: sql<boolean>`EXISTS(SELECT 1 FROM list_votes WHERE list_id = ${list.list_id} AND user_id = ${session?.user?.user_id ? session.user.user_id : '00000000-0000-0000-0000-000000000000'}::uuid AND vote_type = true)`.as('has_upvoted'),
       })
       .from(list)
       .innerJoin(users, eq(list.user_id, users.user_id))
       .where(eq(list.list_id, listId))
       .limit(1)
+
+    console.log(`[API GET List] id=${listId}, vote_score=${listDetails[0]?.vote_score}, has_upvoted=${listDetails[0]?.has_upvoted}`);
 
     if (listDetails.length === 0) {
       return NextResponse.json({ error: 'List not found' }, { status: 404 })

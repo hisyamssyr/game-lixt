@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
           <Navbar />
           <main style={{ paddingTop: 64, flex: 1 }}>{children}</main>

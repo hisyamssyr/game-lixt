@@ -64,20 +64,28 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      console.log('JWT CALLBACK:', { trigger, session })
       if (user) {
         token.user_id = user.user_id
         token.username = user.username
         token.avatar_url = user.avatar_url
+      }
+      
+      if (trigger === 'update' && session) {
+        console.log('UPDATING TOKEN WITH:', session)
+        if (session.username) token.username = session.username
+        if (session.avatar !== undefined) token.avatar_url = session.avatar
+        if (session.avatar_url !== undefined) token.avatar_url = session.avatar_url
       }
 
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.user_id = token.user_id
-        session.user.username = token.username
-        session.user.avatar_url = token.avatar_url
+        session.user.user_id = token.user_id as string
+        session.user.username = token.username as string
+        session.user.avatar_url = token.avatar_url as string | null
       }
 
       return session

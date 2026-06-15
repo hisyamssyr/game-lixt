@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { and, asc, desc, eq, ilike, inArray } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, sql } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { game_genres, games, genres } from '@/db/schema'
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.trim()
-    const genre = searchParams.get('genre')?.trim()
+    const selectedGenres = searchParams.getAll('genre').map(g => g.trim()).filter(Boolean)
     const requestedSort = searchParams.get('sort')
     const sort = sortValues.includes(requestedSort as (typeof sortValues)[number])
       ? (requestedSort as (typeof sortValues)[number])
@@ -61,8 +61,8 @@ export async function GET(request: Request) {
       filters.push(ilike(games.title, `%${search}%`))
     }
 
-    if (genre) {
-      filters.push(eq(genres.genre_name, genre))
+    if (selectedGenres.length > 0) {
+      filters.push(inArray(genres.genre_name, selectedGenres))
     }
 
     const selectedGameFields = {
@@ -74,34 +74,36 @@ export async function GET(request: Request) {
       cover_url: games.cover_url,
     }
 
-    const gameRows = genre
+    const gameRows = selectedGenres.length > 0
       ? await db
-          .selectDistinct(selectedGameFields)
-          .from(games)
-          .innerJoin(game_genres, eq(games.game_id, game_genres.game_id))
-          .innerJoin(genres, eq(game_genres.genre_id, genres.genre_id))
-          .where(filters.length > 0 ? and(...filters) : undefined)
-          .orderBy(getSortExpression(sort))
-          .limit(limit)
-          .offset(offset)
+        .select(selectedGameFields)
+        .from(games)
+        .innerJoin(game_genres, eq(games.game_id, game_genres.game_id))
+        .innerJoin(genres, eq(game_genres.genre_id, genres.genre_id))
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .groupBy(games.game_id)
+        .having(sql`count(distinct ${genres.genre_name}) = ${selectedGenres.length}`)
+        .orderBy(getSortExpression(sort))
+        .limit(limit)
+        .offset(offset)
       : await db
-          .select(selectedGameFields)
-          .from(games)
-          .where(filters.length > 0 ? and(...filters) : undefined)
-          .orderBy(getSortExpression(sort))
-          .limit(limit)
-          .offset(offset)
+        .select(selectedGameFields)
+        .from(games)
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(getSortExpression(sort))
+        .limit(limit)
+        .offset(offset)
 
     const gameIds = gameRows.map((game) => game.game_id)
     const genreRows = gameIds.length
       ? await db
-          .select({
-            game_id: game_genres.game_id,
-            genre_name: genres.genre_name,
-          })
-          .from(game_genres)
-          .innerJoin(genres, eq(game_genres.genre_id, genres.genre_id))
-          .where(inArray(game_genres.game_id, gameIds))
+        .select({
+          game_id: game_genres.game_id,
+          genre_name: genres.genre_name,
+        })
+        .from(game_genres)
+        .innerJoin(genres, eq(game_genres.genre_id, genres.genre_id))
+        .where(inArray(game_genres.game_id, gameIds))
       : []
 
     const genresByGameId = new Map<string, string[]>()

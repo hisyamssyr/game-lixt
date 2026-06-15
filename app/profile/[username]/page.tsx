@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { count, eq, or } from 'drizzle-orm';
-import { Calendar, List, Star, Trophy, UserRound } from 'lucide-react';
-import { list as userLists, reviews, user_achievements, user_library, users } from '@/db/schema';
+import { Calendar, List, Star, Trophy, UserRound, Edit2 } from 'lucide-react';
+import { list as userLists, reviews, user_achievements, user_library, users, games } from '@/db/schema';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
-import { ProfileTabs } from '@/components/pages/ProfileTabs';
+import { ProfileTabs, LibraryItem } from '@/components/pages/ProfileTabs';
 import { db } from '@/lib/db';
 
 interface ProfileResponse {
@@ -17,12 +17,26 @@ interface ProfileResponse {
     list_count: number;
     achievement_count: number;
   };
+  library: LibraryItem[];
+  reviews: Review[];
+  gameTitles: Record<string, string>;
 }
+
+import { getServerSession } from '@/lib/auth';
+import { apiGet, toGame, toList, toReview } from '@/lib/ui-data';
+import type { Review } from '@/components/types';
+import { cookies } from 'next/headers';
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
+  const cookieStore = await cookies();
+  const cookieString = cookieStore.toString();
   const identifier = decodeURIComponent(username);
-  const profile = await getProfile(identifier);
+  
+  const [profile, session] = await Promise.all([
+    getProfile(identifier),
+    getServerSession()
+  ]);
 
   if (!profile) {
     return (
@@ -38,11 +52,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   const joined = profile.join_date ? new Date(profile.join_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
   const avatar = profile.avatar_url ?? 'https://picsum.photos/seed/game-lixt-user/120/120';
+
+  const [listsResponse, gamesResponse] = await Promise.all([
+    apiGet<unknown[]>(`/api/lists?user_id=${profile.user_id}`, [], cookieString),
+    apiGet<{ games: unknown[] }>('/api/games?limit=80', { games: [] }, cookieString),
+  ]);
+  const userLists = listsResponse.map(toList);
+  const gamesList = gamesResponse.games.map(toGame);
   const stats = [
-    { label: 'Games', value: profile.stats.game_count, color: '#6C63FF', icon: UserRound },
-    { label: 'Reviews', value: profile.stats.review_count, color: '#FFB547', icon: Star },
-    { label: 'Lists', value: profile.stats.list_count, color: '#39FF85', icon: List },
-    { label: 'Achievements', value: profile.stats.achievement_count, color: '#3B82F6', icon: Trophy },
+    { label: 'Games', value: profile.stats.game_count, color: '#6C63FF' },
+    { label: 'Reviews', value: profile.stats.review_count, color: '#FFB547' },
+    { label: 'Lists', value: profile.stats.list_count, color: '#39FF85' },
   ];
 
   return (
@@ -54,30 +74,36 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
               <ImageWithFallback src={avatar} alt={profile.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <div>
-              <h1 style={{ margin: '0 0 10px', fontFamily: 'Space Grotesk, sans-serif', fontSize: '2rem', fontWeight: 700, color: '#F0F0F5' }}>{profile.username}</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
+                <h1 style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: '2rem', fontWeight: 700, color: '#F0F0F5' }}>{profile.username}</h1>
+
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#8888A0', fontSize: '0.86rem' }}>
                 <Calendar size={14} />
                 Joined {joined}
               </div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', borderTop: '1px solid var(--gl-border)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', borderTop: '1px solid var(--gl-border)' }}>
             {stats.map((stat, index) => {
-              const Icon = stat.icon;
               return (
-                <div key={stat.label} style={{ padding: '18px 22px', borderRight: index < stats.length - 1 ? '1px solid var(--gl-border)' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, color: stat.color }}>
-                    <Icon size={15} />
-                    <span style={{ color: '#8888A0', fontSize: '0.76rem' }}>{stat.label}</span>
-                  </div>
-                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '1.45rem', fontWeight: 700, color: stat.color, lineHeight: 1 }}>{stat.value.toLocaleString()}</div>
+                <div key={stat.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', borderRight: index < stats.length - 1 ? '1px solid var(--gl-border)' : 'none' }}>
+                  <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '2rem', fontWeight: 700, color: stat.color, lineHeight: 1, marginBottom: 8 }}>{stat.value.toLocaleString()}</div>
+                  <span style={{ color: '#8888A0', fontSize: '0.9rem', fontWeight: 500 }}>{stat.label}</span>
                 </div>
               );
             })}
           </div>
         </div>
       </section>
-      <ProfileTabs />
+      <ProfileTabs 
+        library={profile.library} 
+        lists={userLists} 
+        games={gamesList} 
+        reviews={profile.reviews}
+        gameTitles={profile.gameTitles}
+        isOwnProfile={session?.user?.user_id === profile.user_id} 
+      />
     </div>
   );
 }
@@ -117,6 +143,44 @@ async function getProfile(identifier: string): Promise<ProfileResponse | null> {
     .from(user_achievements)
     .where(eq(user_achievements.user_id, user.user_id));
 
+  const library = await db
+    .select({
+      library_id: user_library.library_id,
+      game_id: user_library.game_id,
+      play_status: user_library.play_status,
+      added_at: user_library.added_at,
+      title: games.title,
+      cover_url: games.cover_url,
+    })
+    .from(user_library)
+    .innerJoin(games, eq(user_library.game_id, games.game_id))
+    .where(eq(user_library.user_id, user.user_id))
+    .orderBy(user_library.added_at);
+
+  const rawReviews = await db
+    .select({
+      id: reviews.review_id,
+      gameId: reviews.game_id,
+      userId: reviews.user_id,
+      username: users.username,
+      avatar: users.avatar_url,
+      rating: reviews.rating,
+      text: reviews.review_text,
+      date: reviews.created_at,
+      gameTitle: games.title
+    })
+    .from(reviews)
+    .innerJoin(users, eq(reviews.user_id, users.user_id))
+    .innerJoin(games, eq(reviews.game_id, games.game_id))
+    .where(eq(reviews.user_id, user.user_id))
+    .orderBy(reviews.created_at);
+
+  const mappedReviews = rawReviews.map(r => toReview(r));
+  const gameTitles: Record<string, string> = {};
+  rawReviews.forEach(r => {
+    gameTitles[r.gameId] = r.gameTitle;
+  });
+
   return {
     ...user,
     join_date: user.join_date.toISOString(),
@@ -126,5 +190,8 @@ async function getProfile(identifier: string): Promise<ProfileResponse | null> {
       list_count,
       achievement_count,
     },
+    library: library.map(l => ({ ...l, added_at: l.added_at.toISOString() })),
+    reviews: JSON.parse(JSON.stringify(mappedReviews.reverse())),
+    gameTitles
   };
 }

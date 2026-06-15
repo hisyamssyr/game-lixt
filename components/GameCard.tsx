@@ -1,12 +1,13 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Plus, Check, BookOpen } from 'lucide-react';
+import { Plus, Check, BookOpen, ChevronDown } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { RatingBadge } from '@/components/RatingBadge';
 import { GenrePill } from '@/components/GenrePill';
 import type { Game, GameStatus } from '@/components/types';
+import { useLibrary } from '@/components/Providers';
 
 interface GameCardProps {
   game: Game;
@@ -15,16 +16,20 @@ interface GameCardProps {
   variant?: 'default' | 'compact';
 }
 
-const STATUS_OPTIONS: { label: string; value: GameStatus }[] = [
-  { label: 'Playing', value: 'playing' },
-  { label: 'Completed', value: 'completed' },
-  { label: 'Plan to Play', value: 'plan_to_play' },
-  { label: 'Dropped', value: 'dropped' },
+const STATUS_OPTIONS: { label: string; value: GameStatus; color: string }[] = [
+  { label: 'Playing', value: 'playing', color: '#3B82F6' },
+  { label: 'Completed', value: 'completed', color: '#39FF85' },
+  { label: 'Plan to Play', value: 'plan_to_play', color: '#FFB547' },
+  { label: 'Dropped', value: 'dropped', color: '#EF4444' },
 ];
 
-export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'default' }: GameCardProps) {
+export function GameCard({ game, libraryStatus: propLibraryStatus, onAddToLibrary: propOnAddToLibrary, variant = 'default' }: GameCardProps) {
   const [hovered, setHovered] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const { library, addToLibrary } = useLibrary();
+
+  const libraryStatus = propLibraryStatus !== undefined ? propLibraryStatus : library[game.id];
+  const onAddToLibrary = propOnAddToLibrary || addToLibrary;
 
   return (
     <div
@@ -33,9 +38,9 @@ export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'defau
         overflow: 'hidden',
         background: 'var(--gl-bg-surface)',
         border: '1px solid var(--gl-border)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        transform: hovered ? 'translateY(-4px)' : 'none',
-        boxShadow: hovered ? '0 16px 40px rgba(0,0,0,0.5)' : 'none',
+        transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease',
+        transform: hovered ? 'translateY(-8px) scale(1.08)' : 'none',
+        boxShadow: hovered ? '0 24px 48px rgba(0,0,0,0.6)' : 'none',
         position: 'relative',
       }}
       onMouseEnter={() => setHovered(true)}
@@ -73,17 +78,23 @@ export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'defau
               position: 'absolute',
               top: 10,
               left: 10,
-              padding: '3px 8px',
+              padding: '4px 10px',
               borderRadius: 24,
-              background: 'rgba(0,0,0,0.7)',
+              background: 'rgba(15,15,19,0.85)',
               backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: `1px solid ${STATUS_OPTIONS.find(s => s.value === libraryStatus)?.color}40`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
             }}>
-              <BookOpen size={12} color="#39FF85" />
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: STATUS_OPTIONS.find(s => s.value === libraryStatus)?.color, boxShadow: `0 0 6px ${STATUS_OPTIONS.find(s => s.value === libraryStatus)?.color}80` }} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, color: STATUS_OPTIONS.find(s => s.value === libraryStatus)?.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {STATUS_OPTIONS.find(s => s.value === libraryStatus)?.label}
+              </span>
             </div>
           )}
           {/* Hover overlay with Add to Library */}
-          {hovered && !libraryStatus && (
+          {hovered && (
             <div
               style={{
                 position: 'absolute',
@@ -93,27 +104,44 @@ export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'defau
               }}
               onClick={(e) => e.preventDefault()}
             >
-              <button
-                onClick={(e) => { e.preventDefault(); setShowDropdown(!showDropdown); }}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #6C63FF, #3B82F6)',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                <Plus size={14} />
-                Add to Library
-              </button>
+              {(() => {
+                const activeStatus = STATUS_OPTIONS.find(s => s.value === libraryStatus);
+                return (
+                  <button
+                    onClick={(e) => { e.preventDefault(); setShowDropdown(!showDropdown); }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: activeStatus ? 'rgba(57, 255, 133, 0.15)' : 'linear-gradient(135deg, #6C63FF, #3B82F6)',
+                      color: activeStatus ? '#39FF85' : '#fff',
+                      border: activeStatus ? '1px solid rgba(57, 255, 133, 0.4)' : 'none',
+                      backdropFilter: activeStatus ? 'blur(8px)' : 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {activeStatus ? (
+                        <>
+                          <Check size={14} />
+                          In Library
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={14} />
+                          Add to Library
+                        </>
+                      )}
+                    </div>
+                    {activeStatus && <ChevronDown size={14} />}
+                  </button>
+                );
+              })()}
               {showDropdown && (
                 <div style={{
                   position: 'absolute',
@@ -121,9 +149,10 @@ export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'defau
                   left: 0,
                   right: 0,
                   marginBottom: 6,
-                  background: 'var(--gl-bg-elevated)',
-                  border: '1px solid var(--gl-border)',
+                  background: '#1A1A24',
+                  border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: 8,
+                  padding: 4,
                   overflow: 'hidden',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                 }}>
@@ -132,50 +161,31 @@ export function GameCard({ game, libraryStatus, onAddToLibrary, variant = 'defau
                       key={opt.value}
                       onClick={(e) => { e.preventDefault(); onAddToLibrary?.(game.id, opt.value); setShowDropdown(false); }}
                       style={{
-                        display: 'block',
+                        display: 'flex',
                         width: '100%',
-                        padding: '9px 14px',
-                        background: 'transparent',
+                        padding: '8px 10px',
+                        background: libraryStatus === opt.value ? `${opt.color}15` : 'transparent',
                         border: 'none',
-                        color: '#F0F0F5',
+                        borderRadius: 6,
+                        color: libraryStatus === opt.value ? opt.color : '#F0F0F5',
                         textAlign: 'left',
                         cursor: 'pointer',
-                        fontSize: '0.78rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 500,
+                        alignItems: 'center',
+                        gap: 8,
                         transition: 'background 0.15s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(108,99,255,0.15)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      onMouseEnter={(e) => { if (libraryStatus !== opt.value) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                      onMouseLeave={(e) => { if (libraryStatus !== opt.value) e.currentTarget.style.background = 'transparent' }}
                     >
-                      {opt.label}
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt.color, opacity: libraryStatus === opt.value ? 1 : 0.5 }} />
+                      <span style={{ flex: 1 }}>{opt.label}</span>
+                      {libraryStatus === opt.value && <Check size={14} color={opt.color} />}
                     </button>
                   ))}
                 </div>
               )}
-            </div>
-          )}
-          {hovered && libraryStatus && (
-            <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10 }}
-              onClick={(e) => e.preventDefault()}>
-              <button
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  borderRadius: 8,
-                  background: 'rgba(57, 255, 133, 0.1)',
-                  color: '#39FF85',
-                  border: '1px solid rgba(57,255,133,0.3)',
-                  cursor: 'pointer',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                }}
-              >
-                <Check size={14} />
-                In Library
-              </button>
             </div>
           )}
         </div>

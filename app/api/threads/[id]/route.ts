@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    
+
     const treeNodes = await db.execute(sql`
       SELECT 
         gt.*,
@@ -61,7 +61,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const session = await getServerSession()
-    
+
     if (!session?.user?.user_id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

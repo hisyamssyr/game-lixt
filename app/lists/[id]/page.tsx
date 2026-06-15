@@ -1,18 +1,25 @@
 import Link from 'next/link';
 import { List, ThumbsUp } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
-import { apiGet } from '@/lib/ui-data';
+import { getServerSession } from '@/lib/auth';
+import { EditListModal } from '@/components/EditListModal';
+import { UpvoteListButton } from '@/components/UpvoteListButton';
+import { getBaseUrl } from '@/lib/ui-data';
+import { cookies } from 'next/headers';
 
 interface ListDetail {
   list_id: string;
   title: string;
   description: string | null;
   list_cover_url: string | null;
+  created_at: string;
   owner: {
+    user_id: string;
     username: string;
     avatar_url: string | null;
   };
   vote_score: number;
+  has_upvoted: boolean;
   items: {
     item_id: string;
     game_id: string;
@@ -24,7 +31,19 @@ interface ListDetail {
 
 export default async function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const list = await apiGet<ListDetail | null>(`/api/lists/${id}`, null);
+
+  const cookieStore = await cookies();
+  const cookieString = cookieStore.toString();
+
+  const [res, session] = await Promise.all([
+    fetch(`${getBaseUrl()}/api/lists/${id}`, {
+      cache: 'no-store',
+      headers: { Cookie: cookieString }
+    }),
+    getServerSession()
+  ]);
+
+  const list: ListDetail | null = res.ok ? await res.json() : null;
 
   if (!list) {
     return <div style={{ minHeight: '70vh', background: 'var(--gl-bg-base)', color: '#F0F0F5', padding: 48 }}>List not found.</div>;
@@ -43,14 +62,19 @@ export default async function ListDetailPage({ params }: { params: Promise<{ id:
             <List size={13} />
             CURATED LIST
           </div>
-          <h1 style={{ margin: '0 0 12px', fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 700, color: '#F0F0F5', lineHeight: 1.1 }}>{list.title}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+            <h1 style={{ margin: 0, fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(1.8rem, 4vw, 3rem)', fontWeight: 700, color: '#F0F0F5', lineHeight: 1.1 }}>{list.title}</h1>
+            {session?.user?.user_id === list.owner.user_id && (
+              <EditListModal listId={list.list_id} initialTitle={list.title} initialDescription={list.description || ''} items={list.items} />
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             <Link href={`/profile/${list.owner.username}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
               <ImageWithFallback src={ownerAvatar} alt={list.owner.username} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.18)' }} />
               <span style={{ color: '#C0C0D0', fontSize: '0.86rem' }}>{list.owner.username}</span>
             </Link>
             <span style={{ color: '#8888A0', fontSize: '0.8rem' }}>{list.items.length} games</span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#39FF85', fontSize: '0.84rem', fontWeight: 700 }}><ThumbsUp size={14} />{Number(list.vote_score ?? 0).toLocaleString()}</span>
+            <UpvoteListButton listId={list.list_id} initialScore={list.vote_score || 0} initialUpvoted={list.has_upvoted} />
           </div>
         </div>
       </section>

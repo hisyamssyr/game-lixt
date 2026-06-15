@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -27,6 +27,7 @@ export function Navbar() {
     { label: 'Home', path: '/' },
     { label: 'Browse', path: '/games' },
     { label: 'Lists', path: '/lists' },
+    { label: 'Community', path: '/threads' },
   ];
 
   const handleSearch = (e: React.FormEvent) => {
@@ -221,8 +222,7 @@ export function Navbar() {
                 }}>
                   {[
                     { label: 'My Profile', path: profilePath },
-                    { label: 'My Library', path: profilePath },
-                    { label: 'Settings', path: profilePath },
+                    { label: 'Edit Profile', path: `${profilePath}/setting` },
                   ].map((item) => (
                     <Link
                       key={item.label}

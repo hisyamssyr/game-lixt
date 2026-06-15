@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { and, eq, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { list_items } from '@/db/schema'
+import { list_items, list } from '@/db/schema'
 import { getServerSession } from '@/lib/auth'
 
 export async function POST(
@@ -22,6 +22,20 @@ export async function POST(
     }
 
     const userId = session.user.user_id
+
+    const targetList = await db
+      .select({ user_id: list.user_id })
+      .from(list)
+      .where(eq(list.list_id, listId))
+      .limit(1)
+
+    if (targetList.length === 0) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
+    if (targetList[0].user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden: You do not own this list' }, { status: 403 })
+    }
 
     const [existingItem] = await db
       .select({ item_id: list_items.item_id })
@@ -69,6 +83,20 @@ export async function DELETE(
     }
 
     const userId = session.user.user_id
+
+    const targetList = await db
+      .select({ user_id: list.user_id })
+      .from(list)
+      .where(eq(list.list_id, listId))
+      .limit(1)
+
+    if (targetList.length === 0) {
+      return NextResponse.json({ error: 'List not found' }, { status: 404 })
+    }
+
+    if (targetList[0].user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden: You do not own this list' }, { status: 403 })
+    }
 
     await db.execute(
       sql`CALL remove_game_from_list(${userId}::uuid, ${listId}::uuid, ${game_id}::uuid)`

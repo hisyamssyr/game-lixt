@@ -82,6 +82,12 @@ export const list_votes = pgTable('list_votes', {
   vote_type: boolean('vote_type').notNull(),
 })
 
+export const review_votes = pgTable('review_votes', {
+  review_id: uuid('review_id').notNull(),
+  user_id: uuid('user_id').notNull(),
+  vote_type: boolean('vote_type').notNull(), // true = upvote, false = downvote
+})
+
 export const thread = pgTable('thread', {
   thread_id: uuid('thread_id').primaryKey().defaultRandom(),
   user_id: uuid('user_id').notNull(),

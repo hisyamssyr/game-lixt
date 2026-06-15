@@ -12,10 +12,14 @@ export function getBaseUrl() {
   return 'http://localhost:3000';
 }
 
-export async function apiGet<T>(path: string, fallback: T): Promise<T> {
+export async function apiGet<T>(path: string, fallback: T, cookieString?: string): Promise<T> {
   try {
     const baseUrl = getBaseUrl();
-    const res = await fetch(`${baseUrl}${path}`, { cache: 'no-store' });
+    const headers: Record<string, string> = {};
+    if (cookieString) {
+      headers.Cookie = cookieString;
+    }
+    const res = await fetch(`${baseUrl}${path}`, { cache: 'no-store', headers });
     if (!res.ok) return fallback;
     return (await res.json()) as T;
   } catch {
@@ -56,7 +60,7 @@ export function toReview(raw: any, gameId?: string): Review {
   return {
     id: raw.review_id ?? raw.id,
     gameId: raw.game_id ?? raw.gameId ?? gameId ?? '',
-    userId: raw.user_id,
+    userId: raw.userId ?? raw.user_id,
     username: raw.username ?? 'Player',
     avatar: raw.avatar_url ?? raw.avatar ?? 'https://picsum.photos/seed/user/60/60',
     rating: Number(raw.rating ?? 0),
@@ -64,6 +68,7 @@ export function toReview(raw: any, gameId?: string): Review {
     date: raw.created_at ?? raw.date ?? new Date().toISOString(),
     upvotes: Number(raw.upvotes ?? 0),
     downvotes: Number(raw.downvotes ?? 0),
+    userVote: raw.userVote === true ? 'up' : raw.userVote === false ? 'down' : null,
   };
 }
 
@@ -77,7 +82,25 @@ export function toList(raw: any): CuratedList {
     username: raw.username ?? raw.owner?.username ?? 'Player',
     avatar: raw.avatar_url ?? raw.owner?.avatar_url ?? 'https://picsum.photos/seed/user/60/60',
     gameIds: raw.gameIds ?? items.map((item: any) => item.game_id).filter(Boolean),
+    gameCount: Number(raw.game_count ?? raw.gameIds?.length ?? items.length ?? 0),
+    covers: raw.covers ?? [],
     upvotes: Number(raw.vote_score ?? raw.upvotes ?? 0),
     downvotes: Number(raw.downvotes ?? 0),
+    hasUpvoted: raw.has_upvoted ?? false,
+  };
+}
+
+export function toThread(raw: any): import('@/components/types').ForumThread {
+  return {
+    id: raw.thread_id ?? raw.id,
+    userId: raw.user_id ?? raw.userId,
+    username: raw.username ?? 'Unknown',
+    avatar: raw.avatar_url ?? raw.avatar ?? '/default-avatar.png',
+    replyingTo: raw.replying_to ?? null,
+    comment: raw.comment ?? '',
+    date: raw.created_at ?? new Date().toISOString(),
+    upvotes: Number(raw.vote_score ?? raw.net_votes ?? 0),
+    replyCount: Number(raw.reply_count ?? raw.replies?.length ?? 0),
+    hasUpvoted: raw.has_upvoted ?? false,
   };
 }

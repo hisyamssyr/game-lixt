@@ -1,9 +1,13 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { Code2, Gamepad2, MessageCircle, Radio, Send } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 export function Footer() {
+  const { data: session } = useSession();
+  const profilePath = session?.user?.username ? `/profile/${encodeURIComponent(session.user.username)}` : '/login';
+
   return (
     <footer style={{
       background: 'var(--gl-bg-surface)',
@@ -93,8 +97,8 @@ export function Footer() {
               {[
                 { label: 'Sign Up', path: '/register' },
                 { label: 'Log In', path: '/login' },
-                { label: 'My Library', path: '/login' },
-                { label: 'Settings', path: '/login' },
+                { label: 'My Profile', path: profilePath },
+                { label: 'Edit Profile', path: session ? `${profilePath}/setting` : '/login' },
               ].map((item) => (
                 <Link key={item.label} href={item.path} style={{ color: '#8888A0', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.15s' }}
                   onMouseEnter={(e) => (e.currentTarget as HTMLAnchorElement).style.color = '#C0C0D0'}
