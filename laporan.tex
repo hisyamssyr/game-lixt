@@ -1,0 +1,67 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[indonesian]{babel}
+\usepackage{hyperref}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\title{Laporan Akhir: Manajemen Basis Data - Game-Lixt}
+\author{Hisyam Syafa}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Struktur Proyek dan Fungsi Direktori}
+
+Proyek \textbf{Game-Lixt} dibangun menggunakan arsitektur modern berbasis \textit{Next.js} (App Router) dengan integrasi ORM Drizzle. Berikut adalah rincian fungsi dari setiap direktori dan file penting dalam repositori ini:
+
+\begin{itemize}
+    \item \textbf{\texttt{app/}}: Direktori utama dari Next.js App Router yang berisi halaman aplikasi (\textit{Pages}), tata letak (\textit{Layouts}), dan rute API.
+    \item \textbf{\texttt{app/api/}}: Berisi seluruh \textit{endpoints} REST API (rute backend) yang digunakan aplikasi untuk berkomunikasi dengan \textit{database}.
+    \item \textbf{\texttt{components/}}: Berisi komponen-komponen UI modular dan \textit{reusable} (seperti \textit{Button}, \textit{Card}, \textit{Modal}) yang dibangun dengan React dan Radix UI.
+    \item \textbf{\texttt{db/}}: Direktori khusus untuk manajemen basis data. Di sini terdapat file \texttt{schema.ts} yang mendefinisikan skema tabel-tabel dalam database secara \textit{type-safe} menggunakan Drizzle ORM.
+    \item \textbf{\texttt{lib/}}: Berisi fungsi-fungsi utilitas, pengaturan koneksi klien basis data (\texttt{db.ts}), serta konfigurasi global lainnya.
+    \item \textbf{\texttt{scripts/}}: Berisi skrip otomatisasi seperti \texttt{seed.ts} yang digunakan untuk melakukan penyemaian (\textit{seeding}) data \textit{dummy} dalam jumlah besar ke dalam basis data.
+    \item \textbf{\texttt{public/}}: Direktori untuk menyimpan aset statis seperti gambar, ikon, dan file konfigurasi web (\texttt{favicon.ico}).
+    \item \textbf{\texttt{.env.local}}: File konfigurasi lingkungan (\textit{environment variables}) yang berisi kredensial sensitif seperti \textit{Connection String} (\texttt{DATABASE\_URL}).
+\end{itemize}
+
+\section{Implementasi Endpoint API}
+
+Aplikasi ini menggunakan rute API serverless bawaan Next.js untuk memproses logika bisnis dan kueri basis data. Berikut adalah modul API utama yang ada pada \texttt{app/api/}:
+
+\begin{enumerate}
+    \item \textbf{\texttt{/api/auth}}: Endpoint yang diatur oleh \textit{NextAuth.js} untuk melayani autentikasi pengguna, meliputi \textit{Login}, \textit{Register}, dan pengelolaan sesi.
+    \item \textbf{\texttt{/api/games}}: Menangani permintaan \textit{fetching} data game, pencarian judul game, pengurutan, hingga filter berdasarkan genre.
+    \item \textbf{\texttt{/api/library}}: Digunakan untuk mengelola (\textit{CRUD}) koleksi game pribadi pengguna (\textit{User Library}) serta memperbarui status bermain (\textit{Play Status}: \textit{Playing, Completed, Dropped}).
+    \item \textbf{\texttt{/api/lists}}: Menangani pembuatan daftar kurasi game pengguna, penambahan game ke dalam daftar (\texttt{list\_items}), dan fitur \textit{upvote/downvote} (\texttt{list\_votes}).
+    \item \textbf{\texttt{/api/reviews}}: Digunakan untuk membuat, mengedit, dan menghapus ulasan game oleh pengguna. Serta memproses mekanisme pemberian \textit{rating}.
+    \item \textbf{\texttt{/api/threads}}: Endpoint forum komunitas tempat pengguna dapat membuat utas diskusi (\textit{thread}) atau membalas (\textit{replying}) diskusi pengguna lain.
+\end{enumerate}
+
+\section{Implementasi Basis Data (SQL)}
+
+Proyek ini menggunakan PostgreSQL. Selain tabel biasa, diterapkan fitur tingkat lanjut (\textit{Advanced SQL Features}) untuk menjaga integritas dan keamanan data:
+
+\subsection{Stored Procedure \& Functions}
+Fungsi SQL kustom (\textit{Functions}) digunakan untuk mengeksekusi logika basis data di sisi server (PostgreSQL) agar lebih cepat dan aman.
+\begin{itemize}
+    \item \textbf{\texttt{log\_audit\_action()}}: Sebuah \textit{Function} yang dirancang khusus untuk memformat aktivitas perubahan data (\textit{INSERT, UPDATE, DELETE}) dan memasukkannya sebagai rekam jejak secara otomatis ke dalam tabel \texttt{audit\_log}. Fungsi ini menangkap \texttt{OLD} dan \texttt{NEW} record dari sistem PostgreSQL.
+\end{itemize}
+
+\subsection{Database Triggers}
+\textit{Trigger} digunakan untuk menjalankan eksekusi perintah (seperti memanggil \textit{Function}) secara implisit saat sebuah \textit{event} terjadi pada tabel tertentu.
+\begin{itemize}
+    \item \textbf{\texttt{trigger\_audit\_log}}: Trigger yang dipasang pada tabel krusial seperti \texttt{users}, \texttt{games}, dan \texttt{reviews}. Ketika terjadi operasi \texttt{UPDATE} atau \texttt{DELETE}, trigger ini akan mencegat eksekusi dan memanggil \texttt{log\_audit\_action()} untuk memastikan setiap manipulasi direkam beserta prangko waktu (\textit{timestamp}).
+    \item \textbf{\texttt{trigger\_update\_timestamp}}: Memastikan kolom \texttt{updated\_at} pada tabel (misalnya tabel \texttt{reviews}) selalu diperbarui otomatis dengan `\texttt{NOW()}` setiap kali *record* mengalami pembaruan, sehingga sistem tidak perlu bergantung pada aplikasi untuk menyuntikkan waktu perubahan secara manual.
+\end{itemize}
+
+\section{Kesimpulan}
+Proyek Game-Lixt mendemonstrasikan implementasi rekayasa basis data yang kokoh. Penggunaan ORM Drizzle memastikan tipe yang aman (\textit{Type-Safety}), sementara pemanfaatan \textit{Trigger} dan \textit{Functions} bawaan PostgreSQL menggaransi adanya integritas data berlapis (\textit{Audit Logging}) di tingkat terbawah aplikasi.
+
+\end{document}

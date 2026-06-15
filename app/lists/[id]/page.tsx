@@ -4,8 +4,10 @@ import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { getServerSession } from '@/lib/auth';
 import { EditListModal } from '@/components/modals/EditListModal';
 import { UpvoteListButton } from '@/components/UpvoteListButton';
-import { getBaseUrl } from '@/lib/ui-data';
-import { cookies } from 'next/headers';
+
+import { db } from '@/lib/db';
+import { list as listTable, users, list_items, games } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 interface ListDetail {
   list_id: string;
@@ -31,23 +33,53 @@ interface ListDetail {
 
 export default async function ListDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await getServerSession();
+  const userId = session?.user?.user_id || '00000000-0000-0000-0000-000000000000';
 
-  const cookieStore = await cookies();
-  const cookieString = cookieStore.toString();
+  const listDetails = await db
+    .select({
+      list_id: listTable.list_id,
+      title: listTable.title,
+      description: listTable.description,
+      list_cover_url: listTable.list_cover_url,
+      created_at: listTable.created_at,
+      owner: {
+        user_id: users.user_id,
+        username: users.username,
+        avatar_url: users.avatar_url,
+      },
+      vote_score: sql<number>`count_list_vote(${listTable.list_id})`.as('vote_score'),
+      has_upvoted: sql<boolean>`EXISTS(SELECT 1 FROM list_votes WHERE list_id = ${listTable.list_id} AND user_id = ${userId}::uuid AND vote_type = true)`.as('has_upvoted'),
+    })
+    .from(listTable)
+    .innerJoin(users, eq(listTable.user_id, users.user_id))
+    .where(eq(listTable.list_id, id))
+    .limit(1);
 
-  const [res, session] = await Promise.all([
-    fetch(`${getBaseUrl()}/api/lists/${id}`, {
-      cache: 'no-store',
-      headers: { Cookie: cookieString }
-    }),
-    getServerSession()
-  ]);
-
-  const list: ListDetail | null = res.ok ? await res.json() : null;
-
-  if (!list) {
+  if (listDetails.length === 0) {
     return <div style={{ minHeight: '70vh', background: 'var(--gl-bg-base)', color: '#F0F0F5', padding: 48 }}>List not found.</div>;
   }
+
+  const items = await db
+    .select({
+      item_id: list_items.item_id,
+      game_id: list_items.game_id,
+      title: games.title,
+      cover_url: games.cover_url,
+      added_at: list_items.added_at,
+    })
+    .from(list_items)
+    .innerJoin(games, eq(list_items.game_id, games.game_id))
+    .where(eq(list_items.list_id, id));
+
+  const list: ListDetail = {
+    ...listDetails[0],
+    created_at: listDetails[0].created_at as unknown as string,
+    items: items.map(item => ({
+      ...item,
+      added_at: item.added_at as unknown as string,
+    })),
+  };
 
   const cover = list.list_cover_url ?? list.items[0]?.cover_url ?? 'https://picsum.photos/seed/game-lixt-list/1200/420';
   const ownerAvatar = list.owner.avatar_url ?? 'https://picsum.photos/seed/game-lixt-owner/80/80';
