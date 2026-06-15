@@ -1,5 +1,5 @@
 import { List } from 'lucide-react';
-import { CreateListModal } from '@/components/CreateListModal';
+import { CreateListModal } from '@/components/modals/CreateListModal';
 import { apiGet, toGame, toList } from '@/lib/ui-data';
 import { cookies } from 'next/headers';
 import { ListsClientView } from '@/components/ListsClientView';

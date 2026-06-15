@@ -6,7 +6,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, List, Sparkles } from 'lucide-re
 import { GameCard } from '@/components/GameCard';
 import { GenrePill } from '@/components/GenrePill';
 import { ListCard } from '@/components/ListCard';
-import type { CuratedList, Game, Review } from '@/components/types';
+import type { CuratedList, Game, Review } from '@/types/app';
 import { ALL_GENRES } from '@/lib/ui-data';
 
 export function HomeView({ games, lists }: { games: Game[]; reviews: Review[]; lists: CuratedList[] }) {

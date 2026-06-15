@@ -6,7 +6,7 @@ import { toThread } from '@/lib/ui-data';
 import { ThreadCard } from '@/components/ThreadCard';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import type { ForumThread } from '@/components/types';
+import type { ForumThread } from '@/types/app';
 
 function ThreadNode({ threadNode }: { threadNode: ForumThread }) {
   return (

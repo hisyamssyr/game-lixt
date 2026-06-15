@@ -17,7 +17,7 @@ export default function EditProfilePage() {
   useEffect(() => {
     if (session?.user?.username) {
       setUsername(session.user.username);
-      setAvatarUrl(session.user.avatar || '');
+      setAvatarUrl(session.user.avatar_url || '');
       setFetching(false);
     } else if (session === null) {
       router.push('/login');

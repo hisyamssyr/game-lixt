@@ -1,4 +1,4 @@
-﻿import type { GameStatus } from '@/components/types';
+import type { GameStatus } from '@/types/app';
 
 const STATUS_CONFIG: Record<GameStatus, { label: string; color: string; bg: string }> = {
   playing: { label: 'Playing', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' },

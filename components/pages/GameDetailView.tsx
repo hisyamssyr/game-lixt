@@ -5,9 +5,9 @@ import { BookOpen, MessageCircle, Star, Trophy, ChevronDown, Check, Plus, Edit3 
 import { GenrePill } from '@/components/GenrePill';
 import { RatingBadge } from '@/components/RatingBadge';
 import { ReviewCard } from '@/components/ReviewCard';
-import { WriteReviewModal } from '@/components/WriteReviewModal';
+import { WriteReviewModal } from '@/components/modals/WriteReviewModal';
 import { ListCard } from '@/components/ListCard';
-import type { Game, GameStatus, Review, CuratedList } from '@/components/types';
+import type { Game, GameStatus, Review, CuratedList } from '@/types/app';
 import { toast } from 'sonner';
 
 const statuses: { label: string; value: GameStatus; api: string; color: string }[] = [

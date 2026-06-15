@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { RatingBadge } from '@/components/RatingBadge';
 import { StarRating } from '@/components/StarRating';
-import type { Review } from '@/components/types';
+import type { Review } from '@/types/app';
 
 interface ReviewCardProps {
   review: Review;

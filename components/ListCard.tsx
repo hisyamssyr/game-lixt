@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { List } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
-import type { CuratedList, Game } from '@/components/types';
+import type { CuratedList, Game } from '@/types/app';
 import { toast } from 'sonner';
 
 interface ListCardProps {

@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { BookOpen, List, Star } from 'lucide-react';
 import Link from 'next/link';
-import { CreateListModal } from '@/components/CreateListModal';
+import { CreateListModal } from '@/components/modals/CreateListModal';
 import { ListCard } from '@/components/ListCard';
 import { ReviewCard } from '@/components/ReviewCard';
-import type { CuratedList, Game, Review } from '@/components/types';
+import type { CuratedList, Game, Review } from '@/types/app';
 
 const tabs = [
   { key: 'library', label: 'Library', icon: BookOpen, empty: 'Library items will appear here.' },

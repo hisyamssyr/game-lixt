@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Filter, Search } from 'lucide-react';
 import { GameCard } from '@/components/GameCard';
 import { GenrePill } from '@/components/GenrePill';
-import type { Game } from '@/components/types';
+import type { Game } from '@/types/app';
 import { ALL_GENRES, toGame } from '@/lib/ui-data';
 
 export function BrowseView() {

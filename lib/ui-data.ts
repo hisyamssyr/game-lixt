@@ -1,4 +1,4 @@
-import type { CuratedList, Game, GameStatus, Review } from '@/components/types';
+import type { CuratedList, Game, GameStatus, Review } from '@/types/app';
 
 export const ALL_GENRES = [
   'Action', 'RPG', 'Strategy', 'Horror', 'Sci-Fi', 'Adventure',
@@ -90,7 +90,7 @@ export function toList(raw: any): CuratedList {
   };
 }
 
-export function toThread(raw: any): import('@/components/types').ForumThread {
+export function toThread(raw: any): import('@/types/app').ForumThread {
   return {
     id: raw.thread_id ?? raw.id,
     userId: raw.user_id ?? raw.userId,

@@ -2,7 +2,7 @@
 
 import { SessionProvider, useSession } from 'next-auth/react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import type { GameStatus } from '@/components/types';
+import type { GameStatus } from '@/types/app';
 import { toast } from 'sonner';
 
 interface LibraryContextType {

@@ -6,7 +6,7 @@ import { Plus, Check, BookOpen, ChevronDown } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { RatingBadge } from '@/components/RatingBadge';
 import { GenrePill } from '@/components/GenrePill';
-import type { Game, GameStatus } from '@/components/types';
+import type { Game, GameStatus } from '@/types/app';
 import { useLibrary } from '@/components/Providers';
 
 interface GameCardProps {

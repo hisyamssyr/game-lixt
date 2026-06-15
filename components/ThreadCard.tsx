@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronUp, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
-import type { ForumThread } from '@/components/types';
+import type { ForumThread } from '@/types/app';
 import { toast } from 'sonner';
 
 export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThread; isDetailView?: boolean }) {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { List, Trophy, ThumbsUp, Search } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { ListCard } from '@/components/ListCard';
-import type { CuratedList, Game } from '@/components/types';
+import type { CuratedList, Game } from '@/types/app';
 
 interface ListsClientViewProps {
   initialLists: CuratedList[];

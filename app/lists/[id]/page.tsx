@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { List, ThumbsUp } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import { getServerSession } from '@/lib/auth';
-import { EditListModal } from '@/components/EditListModal';
+import { EditListModal } from '@/components/modals/EditListModal';
 import { UpvoteListButton } from '@/components/UpvoteListButton';
 import { getBaseUrl } from '@/lib/ui-data';
 import { cookies } from 'next/headers';

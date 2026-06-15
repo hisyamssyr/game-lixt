@@ -24,7 +24,7 @@ interface ProfileResponse {
 
 import { getServerSession } from '@/lib/auth';
 import { apiGet, toGame, toList, toReview } from '@/lib/ui-data';
-import type { Review } from '@/components/types';
+import type { Review } from '@/types/app';
 import { cookies } from 'next/headers';
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
