@@ -26,6 +26,9 @@ export async function POST(
       sql`CALL toggle_list_vote(${userId}::uuid, ${listId}::uuid, ${is_upvote}::boolean)`
     )
 
+    const { revalidatePath } = await import('next/cache');
+    revalidatePath('/', 'layout');
+
     return NextResponse.json({ success: true, message: 'Vote recorded' })
   } catch (error: any) {
     console.error('Error voting on list:', error)

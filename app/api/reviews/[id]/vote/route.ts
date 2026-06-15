@@ -38,6 +38,8 @@ export async function POST(
           .delete(review_votes)
           .where(and(eq(review_votes.review_id, reviewId), eq(review_votes.user_id, userId)))
         
+        const { revalidatePath } = await import('next/cache');
+        revalidatePath('/', 'layout');
         return NextResponse.json({ success: true, message: 'Vote removed' })
       } else {
         // Change vote
@@ -46,6 +48,8 @@ export async function POST(
           .set({ vote_type: isUpvote })
           .where(and(eq(review_votes.review_id, reviewId), eq(review_votes.user_id, userId)))
         
+        const { revalidatePath } = await import('next/cache');
+        revalidatePath('/', 'layout');
         return NextResponse.json({ success: true, message: 'Vote updated' })
       }
     } else {
@@ -58,6 +62,8 @@ export async function POST(
           vote_type: isUpvote,
         })
       
+      const { revalidatePath } = await import('next/cache');
+      revalidatePath('/', 'layout');
       return NextResponse.json({ success: true, message: 'Vote added' })
     }
   } catch (error: any) {

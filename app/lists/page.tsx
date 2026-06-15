@@ -3,19 +3,51 @@ import { CreateListModal } from '@/components/modals/CreateListModal';
 import { toGame, toList } from '@/lib/ui-data';
 import { ListsClientView } from '@/components/ListsClientView';
 
-export default async function ListsPage() {
-  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+import { db } from '@/lib/db';
+import { games, list, list_items, users } from '@/db/schema';
+import { desc, eq, sql } from 'drizzle-orm';
+import { getServerSession } from '@/lib/auth';
 
-  const [listsRes, gamesRes] = await Promise.all([
-    fetch(`${baseUrl}/api/lists`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .catch(() => []),
-    fetch(`${baseUrl}/api/games?limit=80`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .catch(() => ({ games: [] })),
+export default async function ListsPage() {
+  const session = await getServerSession();
+  const userId = session?.user?.user_id || '00000000-0000-0000-0000-000000000000';
+
+  const [listsRaw, gamesRaw] = await Promise.all([
+    db
+      .select({
+        list_id: list.list_id,
+        title: list.title,
+        description: list.description,
+        list_cover_url: list.list_cover_url,
+        created_at: list.created_at,
+        username: users.username,
+        vote_score: sql<number>`count_list_vote(${list.list_id})`.as('vote_score'),
+        game_count: sql<number>`CAST(COUNT(DISTINCT ${list_items.item_id}) AS INTEGER)`.as('game_count'),
+        covers: sql<string[]>`array_agg(DISTINCT ${games.cover_url}) FILTER (WHERE ${games.cover_url} IS NOT NULL)`.as('covers'),
+        has_upvoted: sql<boolean>`EXISTS(SELECT 1 FROM list_votes WHERE list_id = ${list.list_id} AND user_id = ${userId}::uuid AND vote_type = true)`.as('has_upvoted')
+      })
+      .from(list)
+      .innerJoin(users, eq(list.user_id, users.user_id))
+      .leftJoin(list_items, eq(list.list_id, list_items.list_id))
+      .leftJoin(games, eq(list_items.game_id, games.game_id))
+      .groupBy(list.list_id, users.username)
+      .orderBy(desc(list.created_at)),
+    db
+      .select({
+        game_id: games.game_id,
+        title: games.title,
+        developer: games.developer,
+        release_date: games.release_date,
+        average_rating: games.average_rating,
+        cover_url: games.cover_url,
+      })
+      .from(games)
+      .orderBy(desc(games.average_rating))
+      .limit(80),
   ]);
-  const lists = (Array.isArray(listsRes) ? listsRes : []).map(toList);
-  const games = (gamesRes.games ?? []).map(toGame);
+
+  const lists = listsRaw.map(toList);
+  const gamesList = gamesRaw.map(toGame);
 
   return (
     <div style={{ background: 'var(--gl-bg-base)', minHeight: '100vh', paddingBottom: 80 }}>
@@ -34,7 +66,7 @@ export default async function ListsPage() {
         </div>
       </section>
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 24px' }}>
-        <ListsClientView initialLists={lists} games={games} />
+        <ListsClientView initialLists={lists} games={gamesList} />
       </main>
     </div>
   );
