@@ -1,17 +1,20 @@
 import { HomeView } from '@/components/pages/HomeView';
-import { apiGet, toGame, toList } from '@/lib/ui-data';
-import { cookies } from 'next/headers';
+import { toGame, toList } from '@/lib/ui-data';
 
 export default async function HomePage() {
-  const cookieStore = await cookies();
-  const cookieString = cookieStore.toString();
-  const [gamesResponse, listsResponse] = await Promise.all([
-    apiGet<{ games: unknown[] }>('/api/games?limit=20', { games: [] }, cookieString),
-    apiGet<unknown[]>('/api/lists', [], cookieString),
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+
+  const [gamesRes, listsRes] = await Promise.all([
+    fetch(`${baseUrl}/api/games?limit=20`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => ({ games: [] })),
+    fetch(`${baseUrl}/api/lists`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => []),
   ]);
 
-  const games = gamesResponse.games.map(toGame);
-  const lists = listsResponse.map(toList);
+  const games = (gamesRes.games ?? []).map(toGame);
+  const lists = (Array.isArray(listsRes) ? listsRes : []).map(toList);
 
   return <HomeView games={games} reviews={[]} lists={lists} />;
 }

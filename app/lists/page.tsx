@@ -1,19 +1,21 @@
 import { List } from 'lucide-react';
 import { CreateListModal } from '@/components/modals/CreateListModal';
-import { apiGet, toGame, toList } from '@/lib/ui-data';
-import { cookies } from 'next/headers';
+import { toGame, toList } from '@/lib/ui-data';
 import { ListsClientView } from '@/components/ListsClientView';
 
 export default async function ListsPage() {
-  const cookieStore = await cookies();
-  const cookieString = cookieStore.toString();
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
 
-  const [listsResponse, gamesResponse] = await Promise.all([
-    apiGet<unknown[]>('/api/lists', [], cookieString),
-    apiGet<{ games: unknown[] }>('/api/games?limit=80', { games: [] }, cookieString),
+  const [listsRes, gamesRes] = await Promise.all([
+    fetch(`${baseUrl}/api/lists`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => []),
+    fetch(`${baseUrl}/api/games?limit=80`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => ({ games: [] })),
   ]);
-  const lists = listsResponse.map(toList);
-  const games = gamesResponse.games.map(toGame);
+  const lists = (Array.isArray(listsRes) ? listsRes : []).map(toList);
+  const games = (gamesRes.games ?? []).map(toGame);
 
   return (
     <div style={{ background: 'var(--gl-bg-base)', minHeight: '100vh', paddingBottom: 80 }}>

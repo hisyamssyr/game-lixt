@@ -1,22 +1,25 @@
 import { GameDetailView } from '@/components/pages/GameDetailView';
-import { apiGet, mapStatus, toGame, toReview, toList } from '@/lib/ui-data';
+import { mapStatus, toGame, toReview, toList } from '@/lib/ui-data';
 import { getServerSession } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { user_library, list as userLists } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
-import { cookies } from 'next/headers';
 
 export default async function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession();
-
-  const cookieStore = await cookies();
-  const cookieString = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ');
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
 
   const [gameResponse, reviewResponse, featuredListsResponse] = await Promise.all([
-    apiGet<{ success?: boolean; game?: unknown }>(`/api/games/${id}`, {}, cookieString),
-    apiGet<unknown[]>(`/api/reviews?game_id=${id}`, [], cookieString),
-    apiGet<unknown[]>(`/api/lists?game_id=${id}`, [], cookieString),
+    fetch(`${baseUrl}/api/games/${id}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => ({})),
+    fetch(`${baseUrl}/api/reviews?game_id=${id}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => []),
+    fetch(`${baseUrl}/api/lists?game_id=${id}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => []),
   ]);
 
   let initialStatus = null;
@@ -44,9 +47,9 @@ export default async function GameDetailPage({ params }: { params: Promise<{ id:
   }
 
   const safeGame = JSON.parse(JSON.stringify(toGame(gameResponse.game)));
-  const safeReviews = JSON.parse(JSON.stringify(reviewResponse.map((review) => toReview(review, id))));
+  const safeReviews = JSON.parse(JSON.stringify((reviewResponse as unknown[]).map((review) => toReview(review, id))));
   const safeLists = JSON.parse(JSON.stringify(myLists));
-  const safeFeaturedLists = JSON.parse(JSON.stringify(featuredListsResponse.map(toList)));
+  const safeFeaturedLists = JSON.parse(JSON.stringify((featuredListsResponse as unknown[]).map(toList)));
 
   return <GameDetailView game={safeGame} reviews={safeReviews} initialStatus={initialStatus} myLists={safeLists} featuredLists={safeFeaturedLists} />;
 }

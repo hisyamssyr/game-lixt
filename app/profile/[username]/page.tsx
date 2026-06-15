@@ -23,14 +23,12 @@ interface ProfileResponse {
 }
 
 import { getServerSession } from '@/lib/auth';
-import { apiGet, toGame, toList, toReview } from '@/lib/ui-data';
+import { toGame, toList, toReview } from '@/lib/ui-data';
 import type { Review } from '@/types/app';
-import { cookies } from 'next/headers';
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
-  const cookieStore = await cookies();
-  const cookieString = cookieStore.toString();
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
   const identifier = decodeURIComponent(username);
   
   const [profile, session] = await Promise.all([
@@ -53,12 +51,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const joined = profile.join_date ? new Date(profile.join_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
   const avatar = profile.avatar_url ?? 'https://picsum.photos/seed/game-lixt-user/120/120';
 
-  const [listsResponse, gamesResponse] = await Promise.all([
-    apiGet<unknown[]>(`/api/lists?user_id=${profile.user_id}`, [], cookieString),
-    apiGet<{ games: unknown[] }>('/api/games?limit=80', { games: [] }, cookieString),
+  const [listsRes, gamesRes] = await Promise.all([
+    fetch(`${baseUrl}/api/lists?user_id=${profile.user_id}`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => []),
+    fetch(`${baseUrl}/api/games?limit=80`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .catch(() => ({ games: [] })),
   ]);
-  const userLists = listsResponse.map(toList);
-  const gamesList = gamesResponse.games.map(toGame);
+  const userLists = (Array.isArray(listsRes) ? listsRes : []).map(toList);
+  const gamesList = (gamesRes.games ?? []).map(toGame);
   const stats = [
     { label: 'Games', value: profile.stats.game_count, color: '#6C63FF' },
     { label: 'Reviews', value: profile.stats.review_count, color: '#FFB547' },
