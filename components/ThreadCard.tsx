@@ -178,8 +178,7 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
                     alt={thread.username} 
                     style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} 
                   />
-                  {/* Subtle online indicator ring */}
-                  <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: '50%', background: '#39FF85', border: '2px solid var(--gl-bg-surface)' }} />
+
                 </div>
                 <div>
                   <Link href={`/profile/${encodeURIComponent(thread.username)}`} style={{ textDecoration: 'none' }}>
@@ -191,9 +190,9 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
                     </span>
                   </Link>
                   <div style={{ fontSize: '0.8rem', color: '#8888A0', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{new Date(thread.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span suppressHydrationWarning>{new Date(thread.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
-                    <span>{new Date(thread.date).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span suppressHydrationWarning>{new Date(thread.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                 </div>
               </div>
@@ -215,6 +214,13 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
               marginBottom: 20,
               letterSpacing: '-0.01em'
             }}>
+              {thread.replyingToUsername && (
+                <Link href={`/profile/${encodeURIComponent(thread.replyingToUsername)}`} style={{ textDecoration: 'none' }}>
+                  <span style={{ color: '#6C63FF', fontWeight: 600, marginRight: 6 }}>
+                    @{thread.replyingToUsername}
+                  </span>
+                </Link>
+              )}
               {thread.comment}
             </div>
 

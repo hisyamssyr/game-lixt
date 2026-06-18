@@ -44,6 +44,7 @@ export interface ForumThread {
   username: string;
   avatar: string;
   replyingTo: string | null;
+  replyingToUsername?: string | null;
   comment: string;
   date: string;
   upvotes: number;

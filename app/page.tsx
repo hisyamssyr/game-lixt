@@ -47,5 +47,5 @@ export default async function HomePage() {
   const gamesList = gamesRaw.map(toGame);
   const listsList = listsRaw.map(toList);
 
-  return <HomeView games={gamesList} reviews={[]} lists={listsList} />;
+  return <HomeView games={gamesList} reviews={[]} lists={listsList} isLoggedIn={!!session} />;
 }

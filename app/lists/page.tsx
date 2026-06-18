@@ -57,10 +57,10 @@ export default async function ListsPage() {
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 24, background: 'rgba(57,255,133,0.1)', border: '1px solid rgba(57,255,133,0.2)', marginBottom: 12 }}>
               <List size={13} color="#39FF85" />
-              <span style={{ color: '#39FF85', fontSize: '0.75rem', fontWeight: 600 }}>Community Curated</span>
+              <span style={{ color: '#39FF85', fontSize: '0.75rem', fontWeight: 600 }}>Community Lists</span>
             </div>
-            <h1 style={{ margin: '0 0 6px', fontFamily: 'Space Grotesk, sans-serif', fontSize: '2rem', fontWeight: 700, color: '#F0F0F5' }}>Curated Lists</h1>
-            <p style={{ margin: 0, color: '#8888A0', fontSize: '0.88rem' }}>{lists.length} lists hand-picked by the community</p>
+            <h1 style={{ margin: '0 0 6px', fontFamily: 'Space Grotesk, sans-serif', fontSize: '2rem', fontWeight: 700, color: '#F0F0F5' }}>Explore Lists</h1>
+            <p style={{ margin: 0, color: '#8888A0', fontSize: '0.88rem' }}>{lists.length} collections created by the community</p>
           </div>
           <CreateListModal />
         </div>

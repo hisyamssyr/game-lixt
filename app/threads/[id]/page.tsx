@@ -8,27 +8,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import type { ForumThread } from '@/types/app';
 
-function ThreadNode({ threadNode }: { threadNode: ForumThread }) {
-  return (
-    <div style={{ marginBottom: threadNode.depth === 0 ? 0 : 16, position: 'relative' }}>
-      <ThreadCard thread={threadNode} isDetailView={true} />
-      
-      {threadNode.replies && threadNode.replies.length > 0 && (
-        <div style={{ 
-          marginTop: 16, 
-          marginLeft: 24, 
-          paddingLeft: 24, 
-          borderLeft: '2px solid rgba(108, 99, 255, 0.2)',
-          position: 'relative'
-        }}>
-          {threadNode.replies.map(child => (
-            <ThreadNode key={child.id} threadNode={child} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+// Flattened replies don't need a recursive ThreadNode component.
 
 export default async function ThreadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -56,23 +36,28 @@ export default async function ThreadDetailPage({ params }: { params: Promise<{ i
       ORDER BY gt.created_at ASC
     `);
 
-    const buildTree = (nodes: any[], parentId: string | null, currentDepth: number): any[] => {
-      return nodes
-        .filter((n) => n.replying_to === parentId)
-        .map((n) => ({
-          ...toThread(n),
-          depth: currentDepth,
-          replies: buildTree(nodes, n.thread_id as string, currentDepth + 1)
-        }))
-    }
+    const idToUsername: Record<string, string> = {};
+    treeNodes.forEach((n: any) => {
+      idToUsername[n.thread_id] = n.username;
+    });
 
     // @ts-ignore
     const rawRoot = treeNodes.find(n => n.thread_id === id);
     if (rawRoot) {
+      const flatReplies = treeNodes
+        .filter((n: any) => n.thread_id !== id)
+        .map((n: any) => {
+          const t = toThread(n);
+          return {
+            ...t,
+            replyingToUsername: n.replying_to && n.replying_to !== id ? idToUsername[n.replying_to] : null,
+          };
+        });
+
       rootNode = {
         ...toThread(rawRoot),
         depth: 0,
-        replies: buildTree(treeNodes as any[], rawRoot.thread_id as string, 1)
+        replies: flatReplies
       };
     }
   } catch (err) {
@@ -89,12 +74,7 @@ export default async function ThreadDetailPage({ params }: { params: Promise<{ i
 
   const safeRootThread = JSON.parse(JSON.stringify(rootNode));
 
-  // Count total descendants for the UI
-  const countDescendants = (node: any): number => {
-    if (!node.replies) return 0;
-    return node.replies.length + node.replies.reduce((sum: number, child: any) => sum + countDescendants(child), 0);
-  };
-  const totalReplies = countDescendants(safeRootThread);
+  const totalReplies = safeRootThread.replies ? safeRootThread.replies.length : 0;
 
   async function postRootReply(formData: FormData) {
     'use server';
@@ -134,10 +114,10 @@ export default async function ThreadDetailPage({ params }: { params: Promise<{ i
             </span>
           </h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {safeRootThread.replies && safeRootThread.replies.length > 0 ? (
               safeRootThread.replies.map((reply: any) => (
-                <ThreadNode key={reply.id} threadNode={reply} />
+                <ThreadCard key={reply.id} thread={reply} isDetailView={true} />
               ))
             ) : (
               <p style={{ color: '#8888A0', fontSize: '1.05rem', fontStyle: 'italic', marginBottom: 24, textAlign: 'center', padding: '40px 0' }}>

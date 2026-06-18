@@ -12,6 +12,7 @@ export function BrowseView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [games, setGames] = useState<Game[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const selectedGenres = searchParams.getAll('genre');
   const sort = searchParams.get('sort') ?? 'rating';
@@ -26,7 +27,17 @@ export function BrowseView() {
   }, [searchParams, selectedGenres, sort]);
 
   useEffect(() => {
-    fetch(`/api/games?${query}`).then((res) => res.json()).then((data) => setGames((data.games ?? []).map(toGame))).catch(() => setGames([]));
+    setIsLoading(true);
+    fetch(`/api/games?${query}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setGames((data.games ?? []).map(toGame));
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setGames([]);
+        setIsLoading(false);
+      });
   }, [query]);
 
   function updateParam(key: string, value: string) {
@@ -77,9 +88,9 @@ export function BrowseView() {
             <label style={labelStyle}>Sort By</label>
             <div style={{ position: 'relative', marginBottom: 24 }}>
               <select suppressHydrationWarning value={sort} onChange={(e) => updateParam('sort', e.target.value)} style={{ ...selectStyle, appearance: 'none', cursor: 'pointer' }}>
-                <option value="rating" style={{ color: '#0F0F13' }}>Top Rated</option>
-                <option value="release_date" style={{ color: '#0F0F13' }}>Release Date</option>
-                <option value="title" style={{ color: '#0F0F13' }}>Title</option>
+                <option value="rating" style={{ color: '#F0F0F5', background: '#1A1A24' }}>Top Rated</option>
+                <option value="release_date" style={{ color: '#F0F0F5', background: '#1A1A24' }}>Release Date</option>
+                <option value="title" style={{ color: '#F0F0F5', background: '#1A1A24' }}>Title</option>
               </select>
               <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#8888A0', display: 'flex' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -103,13 +114,18 @@ export function BrowseView() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 20 }}>
               {games.map((game) => <GameCard key={game.id} game={game} />)}
             </div>
-            {games.length === 0 && (
+            {isLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: 60, color: '#8888A0' }}>
+                <div style={{ width: 40, height: 40, border: '3px solid rgba(108, 99, 255, 0.2)', borderTopColor: '#6C63FF', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style dangerouslySetInnerHTML={{__html: `@keyframes spin { to { transform: rotate(360deg); } }`}} />
+              </div>
+            ) : games.length === 0 ? (
               <div style={{ color: '#8888A0', padding: 60, textAlign: 'center', border: '1px solid var(--gl-border)', borderRadius: 16, background: 'var(--gl-bg-surface)' }}>
                 <Filter size={32} style={{ opacity: 0.3, marginBottom: 12 }} />
                 <h3 style={{ color: '#F0F0F5', margin: '0 0 8px' }}>No games found</h3>
                 <p style={{ margin: 0 }}>Try adjusting your search or filters.</p>
               </div>
-            )}
+            ) : null}
           </main>
         </div>
       </div>

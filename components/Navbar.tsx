@@ -161,31 +161,7 @@ export function Navbar() {
 
         {currentUser ? (
           <>
-            <button style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid var(--gl-border)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#8888A0',
-              position: 'relative',
-            }}>
-              <Bell size={16} />
-              <span style={{
-                position: 'absolute',
-                top: 6,
-                right: 6,
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: '#6C63FF',
-                border: '1.5px solid #0F0F13',
-              }} />
-            </button>
+
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}

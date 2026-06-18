@@ -63,13 +63,16 @@ export function ListCard({ list, games }: ListCardProps) {
   };
 
   return (
-    <Link href={`/lists/${list.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+    <Link href={`/lists/${list.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{
         background: 'var(--gl-bg-surface)',
         border: '1px solid var(--gl-border)',
         borderRadius: 12,
         overflow: 'hidden',
         transition: 'border-color 0.2s, transform 0.2s',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
       }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(108,99,255,0.4)';
@@ -114,7 +117,7 @@ export function ListCard({ list, games }: ListCardProps) {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '14px 16px' }}>
+        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', flex: 1 }}>
           <h3 style={{
             margin: '0 0 6px',
             color: '#F0F0F5',
@@ -140,7 +143,7 @@ export function ListCard({ list, games }: ListCardProps) {
           }}>
             {list.description}
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <ImageWithFallback
                 src={list.avatar}
