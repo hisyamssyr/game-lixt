@@ -118,3 +118,43 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: message }, { status: 400 })
   }
 }
+
+// ---------------------------------------------------------------------------
+// DELETE /api/library
+// Removes a game from the user's library.
+// ---------------------------------------------------------------------------
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession()
+
+  if (!session?.user?.user_id) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const userId = session.user.user_id
+
+  let body: { game_id?: string }
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { game_id } = body
+
+  if (!game_id) {
+    return Response.json(
+      { error: 'game_id is required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    await db.delete(user_library)
+      .where(and(eq(user_library.user_id, userId), eq(user_library.game_id, game_id)))
+
+    return Response.json({ success: true, message: 'Removed from library' })
+  } catch (err: unknown) {
+    console.error('[DELETE /api/library]', err)
+    return Response.json({ error: 'Failed to remove from library' }, { status: 500 })
+  }
+}

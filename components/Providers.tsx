@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 interface LibraryContextType {
   library: Record<string, GameStatus>;
-  addToLibrary: (gameId: string, status: GameStatus) => Promise<void>;
+  addToLibrary: (gameId: string, status: GameStatus | null) => Promise<void>;
   loading: boolean;
 }
 
@@ -43,11 +43,33 @@ function LibraryProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => setLoading(false));
   }, [session]);
 
-  const addToLibrary = async (gameId: string, status: GameStatus) => {
+  const addToLibrary = async (gameId: string, status: GameStatus | null) => {
     if (!session?.user) {
       toast.error('You must be logged in to do that');
       return;
     }
+
+    if (status === null) {
+      const prev = { ...library };
+      const newLib = { ...library };
+      delete newLib[gameId];
+      setLibrary(newLib);
+      
+      try {
+        const res = await fetch('/api/library', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game_id: gameId })
+        });
+        if (!res.ok) throw new Error('Failed');
+        toast.success('Removed from library');
+      } catch {
+        setLibrary(prev);
+        toast.error('Failed to remove from library');
+      }
+      return;
+    }
+
     const apiStatusMap: Record<GameStatus, string> = {
       'playing': 'Playing',
       'completed': 'Completed',

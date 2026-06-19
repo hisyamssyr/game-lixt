@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { reviews, users } from '@/db/schema'
 import { getServerSession } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
 
 export async function GET(req: NextRequest) {
   try {
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
     await db.execute(
       sql`CALL add_game_review(${userId}::uuid, ${game_id}::uuid, ${rating}::numeric, ${review_text}::text)`
     )
+
+    revalidatePath(`/games/${game_id}`)
 
     return NextResponse.json({ success: true, message: 'Review added' })
   } catch (error: any) {

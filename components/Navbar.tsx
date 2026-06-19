@@ -25,7 +25,7 @@ export function Navbar() {
 
   const navLinks = [
     { label: 'Home', path: '/' },
-    { label: 'Browse', path: '/games' },
+    { label: 'Games', path: '/games' },
     { label: 'Lists', path: '/lists' },
     { label: 'Community', path: '/threads' },
   ];

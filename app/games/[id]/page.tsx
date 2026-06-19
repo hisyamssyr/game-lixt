@@ -5,6 +5,9 @@ import { db } from '@/lib/db';
 import { user_library, list as userLists, games, genres, game_genres, achievements } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession();

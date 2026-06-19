@@ -6,7 +6,7 @@ import { X, Edit3, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StarRating } from '@/components/StarRating';
 
-export function WriteReviewModal({ gameId, gameTitle, isInLibrary }: { gameId: string, gameTitle: string, isInLibrary: boolean }) {
+export function WriteReviewModal({ gameId, gameTitle, isInLibrary, onReviewAdded }: { gameId: string, gameTitle: string, isInLibrary: boolean, onReviewAdded?: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
@@ -37,6 +37,7 @@ export function WriteReviewModal({ gameId, gameTitle, isInLibrary }: { gameId: s
         setRating(0);
         setReviewText('');
         router.refresh();
+        onReviewAdded?.();
       } else {
         const data = await res.json();
         toast.error(data.error || 'Failed to post review');

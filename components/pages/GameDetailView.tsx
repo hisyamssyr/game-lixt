@@ -57,7 +57,7 @@ export function GameDetailView({ game, reviews, initialStatus, myLists = [], fea
     }
   }
 
-  async function addToLibrary(play_status: GameStatus) {
+  async function addToLibrary(play_status: GameStatus | null) {
     if (busy) return;
     setBusy(true);
     try {
@@ -254,7 +254,13 @@ export function GameDetailView({ game, reviews, initialStatus, myLists = [], fea
                         {statuses.map(s => (
                           <button 
                             key={s.value} 
-                            onClick={() => addToLibrary(s.value)}
+                            onClick={() => {
+                              if (status === s.value) {
+                                addToLibrary(null);
+                              } else {
+                                addToLibrary(s.value);
+                              }
+                            }}
                             style={{ 
                               width: '100%', padding: '12px 14px', background: status === s.value ? `${s.color}15` : 'transparent', 
                               border: 'none', borderRadius: 8, color: status === s.value ? s.color : '#F0F0F5', 
@@ -324,6 +330,7 @@ export function GameDetailView({ game, reviews, initialStatus, myLists = [], fea
                   gameId={game.id} 
                   gameTitle={game.title} 
                   isInLibrary={!!status} 
+                  onReviewAdded={() => setTab('reviews')}
                 />
               </div>
 

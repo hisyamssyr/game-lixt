@@ -12,7 +12,7 @@ import { useLibrary } from '@/components/Providers';
 interface GameCardProps {
   game: Game;
   libraryStatus?: GameStatus | null;
-  onAddToLibrary?: (gameId: string, status: GameStatus) => void;
+  onAddToLibrary?: (gameId: string, status: GameStatus | null) => void;
   variant?: 'default' | 'compact';
 }
 
@@ -159,7 +159,15 @@ export function GameCard({ game, libraryStatus: propLibraryStatus, onAddToLibrar
                   {STATUS_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
-                      onClick={(e) => { e.preventDefault(); onAddToLibrary?.(game.id, opt.value); setShowDropdown(false); }}
+                      onClick={(e) => { 
+                        e.preventDefault(); 
+                        if (libraryStatus === opt.value) {
+                          onAddToLibrary?.(game.id, null);
+                        } else {
+                          onAddToLibrary?.(game.id, opt.value);
+                        }
+                        setShowDropdown(false); 
+                      }}
                       style={{
                         display: 'flex',
                         width: '100%',

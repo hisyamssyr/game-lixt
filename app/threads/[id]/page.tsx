@@ -4,11 +4,15 @@ import { sql, eq } from 'drizzle-orm';
 import { thread } from '@/db/schema';
 import { toThread } from '@/lib/ui-data';
 import { ThreadCard } from '@/components/ThreadCard';
+import { CreateThreadForm } from '@/components/forms/CreateThreadForm';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import type { ForumThread } from '@/types/app';
 
 // Flattened replies don't need a recursive ThreadNode component.
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function ThreadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -76,19 +80,6 @@ export default async function ThreadDetailPage({ params }: { params: Promise<{ i
 
   const totalReplies = safeRootThread.replies ? safeRootThread.replies.length : 0;
 
-  async function postRootReply(formData: FormData) {
-    'use server';
-    const comment = formData.get('comment') as string;
-    const session = await getServerSession();
-    if (!session?.user?.user_id || !comment || comment.trim() === '') return;
-    
-    await db.execute(
-      sql`CALL create_thread_post(${session.user.user_id}, ${id}::uuid, ${comment.trim()})`
-    );
-    
-    revalidatePath(`/threads/${id}`);
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: 'var(--gl-bg-base)', paddingTop: 64 }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
@@ -138,47 +129,7 @@ export default async function ThreadDetailPage({ params }: { params: Promise<{ i
             marginTop: 48,
             boxShadow: '0 8px 32px -12px rgba(0,0,0,0.5)'
           }}>
-            <form action={postRootReply}>
-              <div style={{ 
-                position: 'relative',
-                borderRadius: 12,
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(108, 99, 255, 0.2)',
-                boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)',
-                padding: '2px',
-                marginBottom: 20
-              }}>
-                <textarea 
-                  name="comment"
-                  placeholder="Write a direct reply to the original post..."
-                  required
-                  style={{ 
-                    width: '100%', 
-                    background: 'transparent', 
-                    border: 'none', 
-                    padding: '20px', 
-                    color: '#F0F0F5', 
-                    fontSize: '1.05rem', 
-                    minHeight: 120, 
-                    resize: 'vertical',
-                    fontFamily: 'inherit',
-                    outline: 'none',
-                    lineHeight: 1.5
-                  }}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="submit" style={{ 
-                  background: 'linear-gradient(135deg, #6C63FF 0%, #8A84FF 100%)', 
-                  color: '#fff', border: 'none', borderRadius: 8, 
-                  padding: '12px 28px', fontSize: '1rem', fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: '0 4px 14px rgba(108, 99, 255, 0.4)'
-                }}>
-                  Post Reply
-                </button>
-              </div>
-            </form>
+            <CreateThreadForm replyingTo={id} placeholder="Write a direct reply to the original post..." />
           </div>
         ) : (
           <div style={{ background: 'var(--gl-bg-surface)', border: '1px solid var(--gl-border)', borderRadius: 12, padding: 24, marginTop: 40, textAlign: 'center' }}>

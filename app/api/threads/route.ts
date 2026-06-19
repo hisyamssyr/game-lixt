@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { getServerSession } from '@/lib/auth'
+import { thread } from '@/db/schema'
+import { revalidatePath } from 'next/cache'
 
 export async function GET() {
   try {
@@ -43,9 +45,14 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await db.execute(
-        sql`CALL create_thread_post(${session.user.user_id}, ${replying_to || null}, ${comment})`
-      )
+      await db.insert(thread).values({
+        user_id: session.user.user_id,
+        replying_to: replying_to || null,
+        comment: comment
+      });
+      revalidatePath('/threads');
+      if (replying_to) revalidatePath(`/threads/${replying_to}`);
+      
       return NextResponse.json({ success: true, message: 'Thread posted' }, { status: 201 })
     } catch (dbError: any) {
       console.error('DB Error in create_thread_post:', dbError)
