@@ -88,3 +88,45 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const session = await getServerSession()
+
+    if (!session?.user?.user_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    if (!body.comment || typeof body.comment !== 'string' || body.comment.trim() === '') {
+      return NextResponse.json({ error: 'Comment text is required' }, { status: 400 })
+    }
+
+    const targetThread = await db
+      .select()
+      .from(thread)
+      .where(eq(thread.thread_id, id))
+      .limit(1)
+
+    if (targetThread.length === 0) {
+      return NextResponse.json({ error: 'Thread not found' }, { status: 404 })
+    }
+
+    if (targetThread[0].user_id !== session.user.user_id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await db.update(thread)
+      .set({ comment: body.comment.trim() })
+      .where(eq(thread.thread_id, id))
+
+    return NextResponse.json({ success: true, message: 'Thread updated' })
+  } catch (error: any) {
+    console.error('Error updating thread:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
+}

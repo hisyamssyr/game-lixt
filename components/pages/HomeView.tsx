@@ -9,7 +9,7 @@ import { ListCard } from '@/components/ListCard';
 import type { CuratedList, Game, Review } from '@/types/app';
 import { ALL_GENRES } from '@/lib/ui-data';
 
-export function HomeView({ games, lists, isLoggedIn }: { games: Game[]; reviews: Review[]; lists: CuratedList[]; isLoggedIn?: boolean }) {
+export function HomeView({ games, lists, isLoggedIn, username }: { games: Game[]; reviews: Review[]; lists: CuratedList[]; isLoggedIn?: boolean; username?: string }) {
   const listScrollRef = useRef<HTMLDivElement>(null);
   const trendingGames = [...games].sort((a, b) => b.rating - a.rating).slice(0, 10);
   const collageGames = games.slice(0, 10);
@@ -32,7 +32,7 @@ export function HomeView({ games, lists, isLoggedIn }: { games: Game[]; reviews:
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/games" style={{ textDecoration: 'none' }}><button style={{ padding: '13px 28px', borderRadius: 8, background: 'linear-gradient(135deg, #6C63FF, #3B82F6)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 32px rgba(108,99,255,0.35)' }}>Browse Games <ArrowRight size={16} /></button></Link>
               {isLoggedIn ? (
-                <Link href="/profile" style={{ textDecoration: 'none' }}><button style={{ padding: '13px 28px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#F0F0F5', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600 }}>My Profile</button></Link>
+                <Link href={`/profile/${username || ''}`} style={{ textDecoration: 'none' }}><button style={{ padding: '13px 28px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#F0F0F5', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600 }}>My Profile</button></Link>
               ) : (
                 <Link href="/register" style={{ textDecoration: 'none' }}><button style={{ padding: '13px 28px', borderRadius: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: '#F0F0F5', cursor: 'pointer', fontSize: '0.95rem', fontWeight: 600 }}>Sign Up Free</button></Link>
               )}

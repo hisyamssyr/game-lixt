@@ -177,7 +177,7 @@ export function Navbar() {
                 }}
               >
                 <ImageWithFallback
-                  src={(currentUser.avatar_url ?? currentUser.image ?? '/default-avatar.png')}
+                  src={(currentUser.avatar_url ?? currentUser.image ?? 'https://www.nicepng.com/png/detail/115-1150821_default-avatar-comments-sign-in-icon-png.png')}
                   alt={username}
                   style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }}
                 />

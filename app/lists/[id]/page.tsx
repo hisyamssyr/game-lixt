@@ -82,7 +82,7 @@ export default async function ListDetailPage({ params }: { params: Promise<{ id:
   };
 
   const cover = list.list_cover_url ?? list.items[0]?.cover_url ?? 'https://picsum.photos/seed/game-lixt-list/1200/420';
-  const ownerAvatar = list.owner.avatar_url ?? 'https://picsum.photos/seed/game-lixt-owner/80/80';
+  const ownerAvatar = list.owner.avatar_url ?? 'https://www.nicepng.com/png/detail/115-1150821_default-avatar-comments-sign-in-icon-png.png';
 
   return (
     <div style={{ background: 'var(--gl-bg-base)', minHeight: '100vh', paddingBottom: 80 }}>

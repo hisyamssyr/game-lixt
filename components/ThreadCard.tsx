@@ -1,21 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronUp, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { ChevronUp, MessageCircle, MoreHorizontal, Edit3, Trash2, Check, Loader2 } from 'lucide-react';
 import { ImageWithFallback } from '@/components/ImageWithFallback';
 import type { ForumThread } from '@/types/app';
 import { toast } from 'sonner';
 
 export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThread; isDetailView?: boolean }) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAuthor = session?.user?.user_id === thread.userId;
+
   const [upvotes, setUpvotes] = useState(thread.upvotes);
   const [hasUpvoted, setHasUpvoted] = useState(thread.hasUpvoted ?? false);
   const [voting, setVoting] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [posting, setPosting] = useState(false);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(thread.comment);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const isRoot = thread.replyingTo === null;
 
@@ -83,6 +106,53 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
       toast.error('Network error while posting');
     } finally {
       setPosting(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editedText.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+    setIsSubmittingEdit(true);
+    try {
+      const res = await fetch(`/api/threads/${thread.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: editedText }),
+      });
+      if (res.ok) {
+        toast.success('Thread updated');
+        setIsEditing(false);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to update thread');
+      }
+    } catch (err) {
+      toast.error('Network error');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    setShowConfirmDelete(false);
+    try {
+      const res = await fetch(`/api/threads/${thread.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Thread deleted');
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || 'Failed to delete thread');
+        setIsDeleting(false);
+      }
+    } catch (e) {
+      toast.error('Network error while deleting');
+      setIsDeleting(false);
     }
   };
 
@@ -196,33 +266,118 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
                   </div>
                 </div>
               </div>
-              <button style={{ background: 'transparent', border: 'none', color: '#606075', cursor: 'pointer', transition: 'color 0.2s' }}
-                onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = '#C0C0D0'}
-                onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.color = '#606075'}
-              >
-                <MoreHorizontal size={20} />
-              </button>
+              {isAuthor && !isEditing && (
+                <div style={{ position: 'relative' }} ref={dropdownRef} onClick={e => e.stopPropagation()}>
+                  <button style={{ background: isDropdownOpen ? 'rgba(255,255,255,0.1)' : 'transparent', border: 'none', color: isDropdownOpen ? '#F0F0F5' : '#606075', cursor: 'pointer', transition: 'all 0.2s', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsDropdownOpen(!isDropdownOpen); }}
+                    onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.color = '#C0C0D0'}
+                    onMouseLeave={e => { if (!isDropdownOpen) (e.currentTarget as HTMLButtonElement).style.color = '#606075'; }}
+                  >
+                    <MoreHorizontal size={20} />
+                  </button>
+                  {isDropdownOpen && (
+                    <div style={{
+                      position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                      background: '#1A1A24', border: '1px solid var(--gl-border)',
+                      borderRadius: 8, padding: 6, minWidth: 120, zIndex: 10,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.5)', animation: 'glFadeIn 0.15s ease-out'
+                    }}>
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsEditing(true); setIsDropdownOpen(false); }}
+                        style={{
+                          width: '100%', padding: '8px 12px', background: 'transparent',
+                          border: 'none', borderRadius: 6, color: '#C0C0D0',
+                          textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                          fontSize: '0.85rem', fontWeight: 500, transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Edit3 size={14} /> Edit
+                      </button>
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowConfirmDelete(true); setIsDropdownOpen(false); }}
+                        style={{
+                          width: '100%', padding: '8px 12px', background: 'transparent',
+                          border: 'none', borderRadius: 6, color: '#EF4444',
+                          textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
+                          fontSize: '0.85rem', fontWeight: 500, transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Comment Body */}
-            <div style={{ 
-              color: '#D4D4E0', 
-              fontSize: isDetailView && isRoot ? '1.15rem' : '1rem', 
-              lineHeight: 1.65, 
-              whiteSpace: 'pre-wrap', 
-              wordBreak: 'break-word', 
-              marginBottom: 20,
-              letterSpacing: '-0.01em'
-            }}>
-              {thread.replyingToUsername && (
-                <Link href={`/profile/${encodeURIComponent(thread.replyingToUsername)}`} style={{ textDecoration: 'none' }}>
-                  <span style={{ color: '#6C63FF', fontWeight: 600, marginRight: 6 }}>
-                    @{thread.replyingToUsername}
-                  </span>
-                </Link>
-              )}
-              {thread.comment}
-            </div>
+            {/* Comment Body OR Edit Form */}
+            {isEditing ? (
+              <form onSubmit={handleEditSubmit} onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                <textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  rows={4}
+                  required
+                  autoFocus
+                  style={{
+                    width: '100%', padding: '12px', background: 'rgba(0,0,0,0.2)',
+                    border: '1px solid var(--gl-border)', borderRadius: 8,
+                    color: '#F0F0F5', fontSize: '0.9rem', resize: 'vertical',
+                    outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit',
+                    lineHeight: 1.6
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#6C63FF'}
+                  onBlur={e => e.target.style.borderColor = 'var(--gl-border)'}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setIsEditing(false); setEditedText(thread.comment); }}
+                    style={{
+                      padding: '6px 12px', background: 'transparent', border: '1px solid var(--gl-border)',
+                      borderRadius: 6, color: '#C0C0D0', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEdit || !editedText.trim()}
+                    style={{
+                      padding: '6px 16px', background: '#6C63FF', border: 'none',
+                      borderRadius: 6, color: '#fff', cursor: isSubmittingEdit ? 'not-allowed' : 'pointer',
+                      fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
+                      opacity: (isSubmittingEdit || !editedText.trim()) ? 0.6 : 1
+                    }}
+                  >
+                    {isSubmittingEdit ? <><Loader2 size={12} style={{ animation: 'glSpin 1s linear infinite' }} /> Saving</> : <><Check size={12} /> Save</>}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ 
+                color: '#D4D4E0', 
+                fontSize: isDetailView && isRoot ? '1.15rem' : '1rem', 
+                lineHeight: 1.65, 
+                whiteSpace: 'pre-wrap', 
+                wordBreak: 'break-word', 
+                marginBottom: 20,
+                letterSpacing: '-0.01em'
+              }}>
+                {thread.replyingToUsername && (
+                  <Link href={`/profile/${encodeURIComponent(thread.replyingToUsername)}`} style={{ textDecoration: 'none' }} onClick={e => e.stopPropagation()}>
+                    <span style={{ color: '#6C63FF', fontWeight: 600, marginRight: 6 }}>
+                      @{thread.replyingToUsername}
+                    </span>
+                  </Link>
+                )}
+                {thread.comment}
+              </div>
+            )}
 
             {/* Footer Metrics (Reply count, etc.) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, borderTop: isDetailView && isRoot ? '1px solid rgba(255,255,255,0.06)' : 'none', paddingTop: isDetailView && isRoot ? 16 : 0 }}>
@@ -317,6 +472,43 @@ export function ThreadCard({ thread, isDetailView = false }: { thread: ForumThre
           </div>
         </div>
       </div>
+      
+      {showConfirmDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100, 
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(15, 15, 19, 0.8)', backdropFilter: 'blur(4px)',
+          padding: 24
+        }} onClick={e => e.stopPropagation()}>
+          <div style={{
+            background: 'var(--gl-bg-surface)', border: '1px solid var(--gl-border)',
+            borderRadius: 16, width: '100%', maxWidth: 400,
+            boxShadow: '0 24px 48px rgba(0,0,0,0.4)',
+            overflow: 'hidden', animation: 'glFadeIn 0.2s ease-out', padding: 24
+          }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '1.2rem', fontFamily: 'Space Grotesk, sans-serif', color: '#F0F0F5' }}>Delete Thread</h3>
+            <p style={{ margin: '0 0 24px', color: '#8888A0', fontSize: '0.9rem', lineHeight: 1.5 }}>
+              Are you sure you want to delete this thread? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setShowConfirmDelete(false); }}
+                disabled={isDeleting}
+                style={{ padding: '8px 16px', background: 'transparent', border: '1px solid var(--gl-border)', borderRadius: 8, color: '#F0F0F5', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); confirmDelete(); }}
+                disabled={isDeleting}
+                style={{ padding: '8px 16px', background: '#EF4444', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
+              >
+                {isDeleting ? <Loader2 size={14} style={{ animation: 'glSpin 1s linear infinite' }} /> : <Trash2 size={14} />} Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </CardWrapper>
   );
 }

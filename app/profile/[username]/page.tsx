@@ -49,7 +49,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   }
 
   const joined = profile.join_date ? new Date(profile.join_date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Unknown';
-  const avatar = profile.avatar_url ?? 'https://picsum.photos/seed/game-lixt-user/120/120';
+  const avatar = profile.avatar_url ?? 'https://www.nicepng.com/png/detail/115-1150821_default-avatar-comments-sign-in-icon-png.png';
 
   const { desc, sql } = await import('drizzle-orm');
   const { list_items } = await import('@/db/schema');
